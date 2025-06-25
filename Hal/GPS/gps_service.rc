@@ -1,0 +1,8 @@
+service gps_service /vendor/bin/hw/gps_service
+    class hal 
+    user root
+    group root
+    seclabel u:object_r:gps_service_exec:s0
+
+on boot
+    start gps_service
