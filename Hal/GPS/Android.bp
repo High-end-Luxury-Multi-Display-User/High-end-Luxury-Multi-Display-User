@@ -1,0 +1,23 @@
+cc_binary{
+    name : "gps_service",
+    relative_install_path : "hw",
+    srcs : ["native/*.cpp"],
+
+    shared_libs : ["liblog",
+         "libneo7mgps",
+        "libbinder_ndk",
+        "libbinder",
+        "libutils",
+        "libbase",
+        "libcutils",
+        "libcutils",
+        "android.vendor.gps-V1-ndk"],
+    include_dirs: [
+        "vendor/AOSP-ITI-Labs/libs/gpsHal/include",
+    ],
+    stl : "libc++",
+    cflags : ["-std=c++17"],
+    ldflags : ["-u","-main"],
+    vendor : true,
+    init_rc: ["gps_service.rc"],
+}

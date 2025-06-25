@@ -1,0 +1,10 @@
+cc_library_shared {
+    name: "libneo7mgps",
+    srcs: ["src/Neo7mGps.cpp"],
+    shared_libs: ["liblog"],
+    local_include_dirs: ["include"],
+    export_include_dirs: ["include"],
+    cflags: ["-Wall", "-Werror"],
+    vendor : true,
+}
+

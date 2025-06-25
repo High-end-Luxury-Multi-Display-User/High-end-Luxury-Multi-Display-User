@@ -1,0 +1,19 @@
+aidl_interface {
+    name: "android.vendor.gps",
+    srcs: ["android/vendor/gps/IGpsService.aidl"],
+    stability: "vintf",
+    backend: {
+        ndk: {
+            enabled: true,
+        },
+    },
+    vendor_available: true,
+    versions_with_info: [
+        {
+            version: "1",
+            imports: [],
+        },
+    ],
+    frozen: true,
+
+}
