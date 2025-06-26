@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="GradleSettings">
+    <option name="linkedExternalProjectsSettings">
+      <GradleProjectSettings>
+        <option name="testRunner" value="CHOOSE_PER_TEST" />
+        <option name="externalProjectPath" value="$USER_HOME$/Storage/Playground/Github_Repositories/ITI_EmbeddedAndroid/AOSP_Project/High-end-Luxury-Multi-Display-User/App/DriverLauncher" />
+        <option name="gradleJvm" value="#GRADLE_LOCAL_JAVA_HOME" />
+        <option name="modules">
+          <set>
+            <option value="$USER_HOME$/Storage/Playground/Github_Repositories/ITI_EmbeddedAndroid/AOSP_Project/High-end-Luxury-Multi-Display-User/App/DriverLauncher" />
+            <option value="$USER_HOME$/Storage/Playground/Github_Repositories/ITI_EmbeddedAndroid/AOSP_Project/High-end-Luxury-Multi-Display-User/App/DriverLauncher/app" />
+          </set>
+        </option>
+        <option name="resolveExternalAnnotations" value="false" />
+      </GradleProjectSettings>
+    </option>
+  </component>
+</project>
