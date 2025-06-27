@@ -21,7 +21,7 @@
             android:layout_width="62dp"
             android:layout_height="57dp"
             android:contentDescription="Engine"
-            android:src="@drawable/ic_engine" />
+            android:src="@drawable/ic_enginegood" />
 
     </LinearLayout>
 
