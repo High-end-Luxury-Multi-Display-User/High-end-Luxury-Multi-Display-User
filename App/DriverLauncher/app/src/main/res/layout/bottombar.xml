@@ -1,0 +1,94 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="70dp"
+    android:orientation="horizontal"
+    android:background="#1a1a1a"
+    android:elevation="8dp"
+    android:gravity="center">
+
+
+    <!-- Engine State -->
+    <LinearLayout
+        android:id="@+id/engine_button"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <ImageView
+            android:layout_width="62dp"
+            android:layout_height="57dp"
+            android:contentDescription="Engine"
+            android:src="@drawable/ic_engine" />
+
+    </LinearLayout>
+
+    <!-- Drowsiness Detection -->
+    <LinearLayout
+        android:id="@+id/drowsiness_button"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_drowsiness"
+            android:contentDescription="Drowsiness"
+            app:tint="#a47cc4"/>
+    </LinearLayout>
+
+    <!-- Volume Control -->
+    <LinearLayout
+        android:id="@+id/volume_button"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_volume"
+            android:contentDescription="Volume"
+            app:tint="#a47cc4"/>
+    </LinearLayout>
+
+    <!-- Apps Icon -->
+    <LinearLayout
+        android:id="@+id/light_button"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_light"
+            android:contentDescription="Light"
+            app:tint="#a47cc4"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/fuel_button"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/fuelgood"
+            android:contentDescription="fuelstates"
+            />
+    </LinearLayout>
+</LinearLayout>
