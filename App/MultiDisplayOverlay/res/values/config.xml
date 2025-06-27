@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+	<bool name="config_perDisplayFocusEnabled">true</bool>
+	<integer name="config_multiuserMaximumUsers">8</integer>
+	<integer name="config_multiuserMaxRunningUsers">4</integer>
+	<bool name="config_multiuserDelayUserDataLocking">true</bool>
+	<bool name="config_multiuserVisibleBackgroundUsers">true</bool>
+	<bool name="config_multiuserVisibleBackgroundUsersOnDefaultDisplay">true</bool>
+	<bool name="config_enableMultiUserUI">true</bool>
+	<bool name="config_showUserSwitcherByDefault">true</bool>
+</resources>
