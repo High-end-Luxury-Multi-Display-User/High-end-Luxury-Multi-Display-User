@@ -1,9 +1,12 @@
 package com.example.driverlauncher.home
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import com.example.driverlauncher.R
+import com.example.driverlauncher.settings.SettingsActivity
 
 class HomeActivity : AppCompatActivity() {
 
@@ -20,6 +23,13 @@ class HomeActivity : AppCompatActivity() {
                 .replace(R.id.navigation_container, NavigationFragment())
                 .replace(R.id.dashboard_container, DashboardFragment())
                 .commit()
+        }
+
+        // Set click listener for settings icon
+        val settingsIcon = findViewById<ImageView>(R.id.icon_settings)
+        settingsIcon.setOnClickListener {
+            val intent = Intent(this, SettingsActivity::class.java)
+            startActivity(intent)
         }
     }
 

@@ -5,5 +5,7 @@
     <color name="purple">#673AB7</color>
     <color name="light_purple">#BB86FC</color>
     <color name="luxoft_purple">#5e278c</color>
+    <color name="light_gray">#e0dce3</color>
+    <color name="icons_colors">#a47cc4</color>
 
 </resources>

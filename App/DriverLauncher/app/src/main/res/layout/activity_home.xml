@@ -41,18 +41,18 @@
 
             <ImageView
                 android:id="@+id/icon_home"
-                android:layout_width="60dp"
-                android:layout_height="60dp"
+                android:layout_width="55dp"
+                android:layout_height="55dp"
                 android:layout_marginBottom="70dp"
-                android:background="@drawable/icon_background"
+                android:background="@drawable/filled_ellipse"
                 android:contentDescription="Home"
                 android:padding="8dp"
                 android:src="@drawable/ic_home" />
 
             <ImageView
                 android:id="@+id/icon_car"
-                android:layout_width="75dp"
-                android:layout_height="75dp"
+                android:layout_width="70dp"
+                android:layout_height="70dp"
                 android:layout_marginBottom="70dp"
                 android:background="@drawable/icon_background"
                 android:contentDescription="Car"
@@ -61,8 +61,8 @@
 
             <ImageView
                 android:id="@+id/icon_settings"
-                android:layout_width="65dp"
-                android:layout_height="65dp"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
                 android:background="@drawable/icon_background"
                 android:contentDescription="Settings"
                 android:padding="8dp"
@@ -75,7 +75,7 @@
     <LinearLayout
         android:id="@+id/bottom_bar"
         android:layout_width="match_parent"
-        android:layout_height="70dp"
+        android:layout_height="65dp"
         android:background="@drawable/bottombar_background"
         android:elevation="8dp"
         android:orientation="horizontal"
@@ -91,8 +91,8 @@
             android:gravity="center"
             android:orientation="vertical">
             <ImageView
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:contentDescription="Engine"
                 android:src="@drawable/ic_enginegood" />
         </LinearLayout>
@@ -105,8 +105,8 @@
             android:gravity="center"
             android:orientation="vertical">
             <ImageView
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:contentDescription="Drowsiness"
                 android:src="@drawable/ic_drowsiness"
                 app:tint="#a47cc4" />
@@ -120,8 +120,8 @@
             android:gravity="center"
             android:orientation="vertical">
             <ImageView
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:contentDescription="Volume"
                 android:src="@drawable/ic_volume"
                 app:tint="#a47cc4" />
@@ -135,8 +135,8 @@
             android:gravity="center"
             android:orientation="vertical">
             <ImageView
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:contentDescription="Light"
                 android:src="@drawable/ic_light"
                 app:tint="#a47cc4" />
@@ -150,8 +150,8 @@
             android:gravity="center"
             android:orientation="vertical">
             <ImageView
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:contentDescription="Fuel"
                 android:src="@drawable/fuelgood" />
         </LinearLayout>
