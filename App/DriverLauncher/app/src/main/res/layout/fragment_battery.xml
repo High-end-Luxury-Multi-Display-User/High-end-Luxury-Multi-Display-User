@@ -17,8 +17,8 @@
 
         <!-- Smaller Circular Battery Gauge -->
         <RelativeLayout
-            android:layout_width="140dp"
-            android:layout_height="140dp"
+            android:layout_width="250dp"
+            android:layout_height="250dp"
             android:layout_gravity="center">
 
             <ProgressBar
@@ -26,9 +26,9 @@
                 style="?android:attr/progressBarStyleHorizontal"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:indeterminate="false"
                 android:max="100"
                 android:progress="75"
-                android:indeterminate="false"
                 android:progressDrawable="@drawable/circular_progress_drawable"
                 android:rotation="270" />
 
@@ -69,7 +69,7 @@
             <LinearLayout
                 style="@style/MetricCard"
                 android:layout_width="0dp"
-                android:layout_height="70dp"
+                android:layout_height="110dp"
                 android:layout_columnWeight="1"
                 android:gravity="center"
                 android:orientation="vertical"
@@ -94,7 +94,7 @@
             <LinearLayout
                 style="@style/MetricCard"
                 android:layout_width="0dp"
-                android:layout_height="70dp"
+                android:layout_height="110dp"
                 android:layout_columnWeight="1"
                 android:gravity="center"
                 android:orientation="vertical"
@@ -119,7 +119,7 @@
             <LinearLayout
                 style="@style/MetricCard"
                 android:layout_width="0dp"
-                android:layout_height="70dp"
+                android:layout_height="110dp"
                 android:layout_columnWeight="1"
                 android:gravity="center"
                 android:orientation="vertical"
@@ -144,7 +144,7 @@
             <LinearLayout
                 style="@style/MetricCard"
                 android:layout_width="0dp"
-                android:layout_height="70dp"
+                android:layout_height="110dp"
                 android:layout_columnWeight="1"
                 android:gravity="center"
                 android:orientation="vertical"
@@ -167,3 +167,4 @@
         </GridLayout>
     </LinearLayout>
 </FrameLayout>
+
