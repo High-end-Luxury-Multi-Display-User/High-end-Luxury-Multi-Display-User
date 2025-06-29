@@ -1,18 +1,20 @@
 package android.vendor.carinfo
 
 import android.car.Car
-import android.car.hardware.CarPropertyValue
 import android.car.hardware.property.CarPropertyManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.fragment.app.Fragment
 
 class BatteryFragment : Fragment(R.layout.fragment_battery) {
-    private val VENDOR_EXTENSION_BATTERY_PROPERTY = 0x21100105
+
+    private val VENDOR_EXTENSION_BATTERY_PROPERTY = 0x21400105
     private val areaId = 0
 
     private lateinit var car: Car
@@ -25,21 +27,65 @@ class BatteryFragment : Fragment(R.layout.fragment_battery) {
     private lateinit var chargerText: TextView
     private lateinit var efficiencyText: TextView
 
-    private val batteryCallback = object : CarPropertyManager.CarPropertyEventCallback {
-        override fun onChangeEvent(event: CarPropertyValue<*>) {
-            val battery = event.value as? Int ?: return
-            updateUI(battery)
-        }
+    private val handler = Handler(Looper.getMainLooper())
+    private val pollInterval = 1000L
 
-        override fun onErrorEvent(propId: Int, zone: Int) {
-            Log.e("BatteryFragment", "Error with prop $propId in zone $zone")
+    private val pollRunnable = object : Runnable {
+        override fun run() {
+            try {
+                val batteryProp = carPropertyManager.getProperty(
+                    Integer::class.java,
+                    VENDOR_EXTENSION_BATTERY_PROPERTY,
+                    areaId
+                )
+
+                if (batteryProp != null) {
+                    val rawPotValue = batteryProp.value.toInt()
+                    val batteryPercent = mapPotToPercentage(rawPotValue)
+                    updateUI(batteryPercent)
+                    Log.d("BatteryFragment", "Raw battery value: $rawPotValue → $batteryPercent%")
+                }
+
+            } catch (e: Exception) {
+                Log.e("BatteryFragment", "Polling error", e)
+            }
+
+            handler.postDelayed(this, pollInterval)
         }
     }
 
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+    ): View? {
+        val view = inflater.inflate(R.layout.fragment_battery, container, false)
+
+        circleProgress = view.findViewById(R.id.circleProgress)
+        rangeText = view.findViewById(R.id.rangeText)
+        batteryText = view.findViewById(R.id.text_battery)
+        consumptionText = view.findViewById(R.id.text_consumption)
+        chargerText = view.findViewById(R.id.text_charger)
+        efficiencyText = view.findViewById(R.id.text_efficiency)
+
+        try {
+            car = Car.createCar(requireContext().applicationContext)
+            carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
+        } catch (e: Exception) {
+            Log.e("BatteryFragment", "Car manager init failed", e)
+            return view
+        }
+
+        handler.post(pollRunnable)
+        return view
+    }
+
+    private fun mapPotToPercentage(rawValue: Int): Int {
+        val clamped = rawValue.coerceIn(0, 10000)
+        return (clamped / 100.0).toInt().coerceIn(0, 100)
+    }
+
     private fun updateUI(battery: Int) {
-        // Simulate calculations:
-        val range = battery * 3.3    // example: 75% = 247km
-        val consumption = (200 - battery) + 63  // inverse
+        val range = battery * 3.3
+        val consumption = (200 - battery) + 63
         val nextCharger = (battery * 0.48).toInt()
         val efficiency = (battery * 1.24).coerceAtMost(100.0).toInt()
 
@@ -51,34 +97,8 @@ class BatteryFragment : Fragment(R.layout.fragment_battery) {
         efficiencyText.text = "$efficiency%"
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
-    ): View? {
-        val view = inflater.inflate(R.layout.fragment_battery, container, false)
-        circleProgress = view.findViewById(R.id.circleProgress)
-        rangeText = view.findViewById(R.id.rangeText)
-        batteryText = view.findViewById(R.id.text_battery)
-        consumptionText = view.findViewById(R.id.text_consumption)
-        chargerText = view.findViewById(R.id.text_charger)
-        efficiencyText = view.findViewById(R.id.text_efficiency)
-
-        car = Car.createCar(requireContext())
-        carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
-
-        carPropertyManager.registerCallback(
-            batteryCallback,
-            VENDOR_EXTENSION_BATTERY_PROPERTY,
-            CarPropertyManager.SENSOR_RATE_ONCHANGE
-        )
-
-        // Simulate value on first load
-        updateUI(75)
-
-        return view
-    }
-
     override fun onDestroyView() {
         super.onDestroyView()
-        carPropertyManager.unregisterCallback(batteryCallback)
+        handler.removeCallbacks(pollRunnable)
     }
 }
