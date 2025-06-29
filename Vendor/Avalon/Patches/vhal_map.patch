@@ -1,10 +1,10 @@
 diff --git a/service/src/com/android/car/hal/fakevhal/FakeVhalConfigParser.java b/service/src/com/android/car/hal/fakevhal/FakeVhalConfigParser.java
 old mode 100644
 new mode 100755
-index 1acc965..8d882df
+index 1acc965..c3f1548
 --- a/service/src/com/android/car/hal/fakevhal/FakeVhalConfigParser.java
 +++ b/service/src/com/android/car/hal/fakevhal/FakeVhalConfigParser.java
-@@ -208,7 +208,19 @@ public final class FakeVhalConfigParser {
+@@ -208,7 +208,23 @@ public final class FakeVhalConfigParser {
              Map.entry("PLACEHOLDER_PROPERTY_BOOLEAN",
                      TestVendorProperty.PLACEHOLDER_PROPERTY_BOOLEAN),
              Map.entry("PLACEHOLDER_PROPERTY_STRING",
@@ -21,6 +21,10 @@ index 1acc965..8d882df
 +            Map.entry("VENDOR_EXTENSION_FRight_Door_PROPERTY",
 +                    TestVendorProperty.VENDOR_EXTENSION_FRight_Door_PROPERTY), 
 +            Map.entry("VENDOR_EXTENSION_RRight_Door_PROPERTY",
++                    TestVendorProperty.VENDOR_EXTENSION_RRight_Door_PROPERTY),
++            Map.entry("VENDOR_EXTENSION_ENGINE_STATUS_PROPERTY",
++                    TestVendorProperty.VENDOR_EXTENSION_FRight_Door_PROPERTY), 
++            Map.entry("VENDOR_EXTENSION_FUEL_STATUS_PROPERTY",
 +                    TestVendorProperty.VENDOR_EXTENSION_RRight_Door_PROPERTY) 
      );
  

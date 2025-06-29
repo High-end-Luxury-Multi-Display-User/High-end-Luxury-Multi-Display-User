@@ -1,14 +1,13 @@
 diff --git a/automotive/vehicle/aidl/impl/3/default_config/config/TestProperties.json b/automotive/vehicle/aidl/impl/3/default_config/config/TestProperties.json
 old mode 100644
 new mode 100755
-index 73e4d44..e36589c
+index 73e4d44..05a27f8
 --- a/automotive/vehicle/aidl/impl/3/default_config/config/TestProperties.json
 +++ b/automotive/vehicle/aidl/impl/3/default_config/config/TestProperties.json
-@@ -180,6 +180,66 @@
-             "property": "TestVendorProperty::ECHO_REVERSE_BYTES",
+@@ -181,6 +181,87 @@
              "access": "VehiclePropertyAccess::READ_WRITE",
              "changeMode": "VehiclePropertyChangeMode::ON_CHANGE"
-+        },
+         },
 +                {
 +            "property": "TestVendorProperty::VENDOR_EXTENSION_BATERRY_PROPERTY",
 +            "defaultValue": {
@@ -68,10 +67,32 @@ index 73e4d44..e36589c
 +            },
 +            "access": "VehiclePropertyAccess::READ_WRITE",
 +            "changeMode": "VehiclePropertyChangeMode::ON_CHANGE"
-         },
++        },
++         {
++            "property": "TestVendorProperty::VENDOR_EXTENSION_ENGINE_STATUS_PROPERTY",
++            "defaultValue": {
++                 "int32Values": [
++                    0
++                ]
++            },
++            "access": "VehiclePropertyAccess::READ_WRITE",
++            "changeMode": "VehiclePropertyChangeMode::ON_CHANGE"
++        },
++        {
++            "property": "TestVendorProperty::VENDOR_EXTENSION_FUEL_STATUS_PROPERTY",
++            "defaultValue": {
++                "int32Values": [
++                    0
++                ]
++            },
++            "access": "VehiclePropertyAccess::READ_WRITE",
++            "changeMode": "VehiclePropertyChangeMode::ON_CHANGE"
++        },
++        
          {
              "property": "TestVendorProperty::VENDOR_PROPERTY_FOR_ERROR_CODE_TESTING",
-@@ -206,4 +266,4 @@
+             "access": "VehiclePropertyAccess::READ_WRITE",
+@@ -206,4 +287,4 @@
              ]
          }
      ]
@@ -92,10 +113,10 @@ index 9b9b4f4..9a4fd27 100644
      export_static_lib_headers: ["VehicleHalUtils-V3"],
  }
 diff --git a/automotive/vehicle/aidl/impl/3/fake_impl/hardware/src/FakeVehicleHardware.cpp b/automotive/vehicle/aidl/impl/3/fake_impl/hardware/src/FakeVehicleHardware.cpp
-index fbd20c5..6c2357d 100644
+index fbd20c5..c50829f 100644
 --- a/automotive/vehicle/aidl/impl/3/fake_impl/hardware/src/FakeVehicleHardware.cpp
 +++ b/automotive/vehicle/aidl/impl/3/fake_impl/hardware/src/FakeVehicleHardware.cpp
-@@ -43,6 +43,15 @@
+@@ -43,6 +43,18 @@
  #include <unordered_set>
  #include <vector>
  
@@ -107,11 +128,14 @@ index fbd20c5..6c2357d 100644
 +#define  RRight_GPIO_PIN 19
 +#define  LED_GPIO_PIN   21
 +
++#define  Engine_GPIO_PIN 24
++#define  Fuel_GPIO_PIN   25
++
 +
  namespace android {
  namespace hardware {
  namespace automotive {
-@@ -877,6 +886,56 @@ FakeVehicleHardware::ValueResultType FakeVehicleHardware::maybeGetSpecialValue(
+@@ -877,6 +889,78 @@ FakeVehicleHardware::ValueResultType FakeVehicleHardware::maybeGetSpecialValue(
              return nullptr;
          case toInt(VehicleProperty::ADAPTIVE_CRUISE_CONTROL_TARGET_TIME_GAP):
              [[fallthrough]];
@@ -155,6 +179,28 @@ index fbd20c5..6c2357d 100644
 +        return result;
 +     }   
 +    
++    
++    case toInt(TestVendorProperty::VENDOR_EXTENSION_ENGINE_STATUS_PROPERTY): {
++        (*isSpecialValue) = true;
++        int engineState = 0;
++        GpioHal gpio =GpioHal();
++        gpio.setGpioDirIn(Engine_GPIO_PIN);
++        gpio.getGpioValue(Engine_GPIO_PIN, &engineState);
++        result = mValuePool->obtainInt32(engineState);
++        return result;
++    }   
++    
++    case toInt(TestVendorProperty::VENDOR_EXTENSION_FUEL_STATUS_PROPERTY): {
++        (*isSpecialValue) = true;
++
++        int FuelState = 0;
++        GpioHal gpio =GpioHal();
++        gpio.setGpioDirIn(Fuel_GPIO_PIN);
++        gpio.getGpioValue(Fuel_GPIO_PIN, &FuelState);
++        result = mValuePool->obtainInt32(FuelState);
++        return result;
++    }  
++    
 +    case toInt(TestVendorProperty::VENDOR_EXTENSION_RRight_Door_PROPERTY): {
 +        (*isSpecialValue) = true;
 +
@@ -168,7 +214,7 @@ index fbd20c5..6c2357d 100644
          case toInt(VehicleProperty::ADAPTIVE_CRUISE_CONTROL_LEAD_VEHICLE_MEASURED_DISTANCE): {
              isAdasPropertyAvailableResult =
                      isAdasPropertyAvailable(toInt(VehicleProperty::CRUISE_CONTROL_STATE));
-@@ -1146,6 +1205,20 @@ VhalResult<void> FakeVehicleHardware::maybeSetSpecialValue(const VehiclePropValu
+@@ -1146,6 +1230,20 @@ VhalResult<void> FakeVehicleHardware::maybeSetSpecialValue(const VehiclePropValu
                         << "setting";
              }
              return {};
@@ -192,10 +238,10 @@ index fbd20c5..6c2357d 100644
 diff --git a/automotive/vehicle/aidl/impl/3/utils/test_vendor_properties/android/hardware/automotive/vehicle/TestVendorProperty.aidl b/automotive/vehicle/aidl/impl/3/utils/test_vendor_properties/android/hardware/automotive/vehicle/TestVendorProperty.aidl
 old mode 100644
 new mode 100755
-index 3c877fa..837fa6b
+index 3c877fa..5ca9bec
 --- a/automotive/vehicle/aidl/impl/3/utils/test_vendor_properties/android/hardware/automotive/vehicle/TestVendorProperty.aidl
 +++ b/automotive/vehicle/aidl/impl/3/utils/test_vendor_properties/android/hardware/automotive/vehicle/TestVendorProperty.aidl
-@@ -142,4 +142,46 @@ enum TestVendorProperty {
+@@ -142,4 +142,60 @@ enum TestVendorProperty {
       * VehiclePropertyGroup.VENDOR | VehicleArea.GLOBAL | VehiclePropertyGroup.STRING
       */
      VENDOR_EXTENSION_STRING_PROPERTY = 0x103 + 0x20000000 + 0x01000000 + 0x00100000,
@@ -239,16 +285,30 @@ index 3c877fa..837fa6b
 +     */
 +    VENDOR_EXTENSION_RRight_Door_PROPERTY = 0x10A + 0x20000000 + 0x01000000 + 0x00400000,
 +    
++                  /**
++     * Property used for {@code CarVendorPropertyCustomPermissionTest}.
++     *
++     * VehiclePropertyGroup.VENDOR | VehicleArea.GLOBAL | VehiclePropertyGroup.INT32
++     */
++    VENDOR_EXTENSION_ENGINE_STATUS_PROPERTY = 0x10B + 0x20000000 + 0x01000000 + 0x00400000,
++    
++         /**
++     * Property used for {@code CarVendorPropertyCustomPermissionTest}.
++     *
++     * VehiclePropertyGroup.VENDOR | VehicleArea.GLOBAL | VehiclePropertyGroup.INT32
++     */
++    VENDOR_EXTENSION_FUEL_STATUS_PROPERTY = 0x10C + 0x20000000 + 0x01000000 + 0x00400000,
++    
 +    
 +
  }
 diff --git a/automotive/vehicle/aidl/impl/current/default_config/config/TestProperties.json b/automotive/vehicle/aidl/impl/current/default_config/config/TestProperties.json
 old mode 100644
 new mode 100755
-index 73e4d44..607b556
+index 73e4d44..1b013e1
 --- a/automotive/vehicle/aidl/impl/current/default_config/config/TestProperties.json
 +++ b/automotive/vehicle/aidl/impl/current/default_config/config/TestProperties.json
-@@ -175,6 +175,66 @@
+@@ -175,6 +175,86 @@
              },
              "access": "VehiclePropertyAccess::READ_WRITE",
              "changeMode": "VehiclePropertyChangeMode::ON_CHANGE"
@@ -293,6 +353,26 @@ index 73e4d44..607b556
 +            "access": "VehiclePropertyAccess::READ_WRITE",
 +            "changeMode": "VehiclePropertyChangeMode::ON_CHANGE"
 +        },
++         {
++            "property": "TestVendorProperty::VENDOR_EXTENSION_ENGINE_STATUS_PROPERTY",
++            "defaultValue": {
++                 "int32Values": [
++                    0
++                ]
++            },
++            "access": "VehiclePropertyAccess::READ_WRITE",
++            "changeMode": "VehiclePropertyChangeMode::ON_CHANGE"
++        },
++        {
++            "property": "TestVendorProperty::VENDOR_EXTENSION_FUEL_STATUS_PROPERTY",
++            "defaultValue": {
++                "int32Values": [
++                    0
++                ]
++            },
++            "access": "VehiclePropertyAccess::READ_WRITE",
++            "changeMode": "VehiclePropertyChangeMode::ON_CHANGE"
++        },
 +        {
 +            "property": "TestVendorProperty::VENDOR_EXTENSION_FRight_Door_PROPERTY",
 +            "defaultValue": {
@@ -315,7 +395,7 @@ index 73e4d44..607b556
          },
          {
              "property": "TestVendorProperty::ECHO_REVERSE_BYTES",
-@@ -206,4 +266,4 @@
+@@ -206,4 +286,4 @@
              ]
          }
      ]
@@ -338,10 +418,10 @@ index 6030e15..d276c09 100644
 diff --git a/automotive/vehicle/aidl/impl/current/fake_impl/hardware/src/FakeVehicleHardware.cpp b/automotive/vehicle/aidl/impl/current/fake_impl/hardware/src/FakeVehicleHardware.cpp
 old mode 100644
 new mode 100755
-index 52daf68..e9e964c
+index 52daf68..b84ceff
 --- a/automotive/vehicle/aidl/impl/current/fake_impl/hardware/src/FakeVehicleHardware.cpp
 +++ b/automotive/vehicle/aidl/impl/current/fake_impl/hardware/src/FakeVehicleHardware.cpp
-@@ -43,6 +43,17 @@
+@@ -43,6 +43,20 @@
  #include <unordered_set>
  #include <vector>
  
@@ -355,11 +435,14 @@ index 52daf68..e9e964c
 +#define  RRight_GPIO_PIN 19
 +#define  LED_GPIO_PIN   21
 +
++#define  Engine_GPIO_PIN 24
++#define  Fuel_GPIO_PIN   25
++
 +
  namespace android {
  namespace hardware {
  namespace automotive {
-@@ -867,6 +878,57 @@ FakeVehicleHardware::ValueResultType FakeVehicleHardware::maybeGetSpecialValue(
+@@ -867,6 +881,82 @@ FakeVehicleHardware::ValueResultType FakeVehicleHardware::maybeGetSpecialValue(
          case toInt(TestVendorProperty::VENDOR_PROPERTY_FOR_ERROR_CODE_TESTING):
              *isSpecialValue = true;
              return StatusError((StatusCode)VENDOR_ERROR_CODE);
@@ -402,6 +485,31 @@ index 52daf68..e9e964c
 +        result = mValuePool->obtainInt32(doorState);
 +        return result;
 +     }   
++     
++    case toInt(TestVendorProperty::VENDOR_EXTENSION_ENGINE_STATUS_PROPERTY): {
++        (*isSpecialValue) = true;
++        int engineState = 0;
++        GpioHal gpio =GpioHal();
++        gpio.setGpioDirIn(Engine_GPIO_PIN);
++        gpio.getGpioValue(Engine_GPIO_PIN, &engineState);
++        result = mValuePool->obtainInt32(engineState);
++        return result;
++    }   
++    
++    case toInt(TestVendorProperty::VENDOR_EXTENSION_FUEL_STATUS_PROPERTY): {
++        (*isSpecialValue) = true;
++
++        int FuelState = 0;
++        GpioHal gpio =GpioHal();
++        gpio.setGpioDirIn(Fuel_GPIO_PIN);
++        gpio.getGpioValue(Fuel_GPIO_PIN, &FuelState);
++        result = mValuePool->obtainInt32(FuelState);
++        return result;
++    }  
++    
++    
++    
++    
 +    
 +    case toInt(TestVendorProperty::VENDOR_EXTENSION_RRight_Door_PROPERTY): {
 +        (*isSpecialValue) = true;
@@ -417,7 +525,7 @@ index 52daf68..e9e964c
          case toInt(VehicleProperty::CRUISE_CONTROL_TARGET_SPEED):
              isAdasPropertyAvailableResult =
                      isAdasPropertyAvailable(toInt(VehicleProperty::CRUISE_CONTROL_STATE));
-@@ -1093,6 +1155,21 @@ VhalResult<void> FakeVehicleHardware::maybeSetSpecialValue(const VehiclePropValu
+@@ -1093,6 +1183,21 @@ VhalResult<void> FakeVehicleHardware::maybeSetSpecialValue(const VehiclePropValu
          case toInt(VehicleProperty::HVAC_TEMPERATURE_VALUE_SUGGESTION):
              *isSpecialValue = true;
              return setHvacTemperatureValueSuggestion(value);
@@ -442,10 +550,10 @@ index 52daf68..e9e964c
 diff --git a/automotive/vehicle/aidl/impl/current/utils/test_vendor_properties/android/hardware/automotive/vehicle/TestVendorProperty.aidl b/automotive/vehicle/aidl/impl/current/utils/test_vendor_properties/android/hardware/automotive/vehicle/TestVendorProperty.aidl
 old mode 100644
 new mode 100755
-index 3c877fa..837fa6b
+index 3c877fa..2fe4c1e
 --- a/automotive/vehicle/aidl/impl/current/utils/test_vendor_properties/android/hardware/automotive/vehicle/TestVendorProperty.aidl
 +++ b/automotive/vehicle/aidl/impl/current/utils/test_vendor_properties/android/hardware/automotive/vehicle/TestVendorProperty.aidl
-@@ -142,4 +142,46 @@ enum TestVendorProperty {
+@@ -142,4 +142,62 @@ enum TestVendorProperty {
       * VehiclePropertyGroup.VENDOR | VehicleArea.GLOBAL | VehiclePropertyGroup.STRING
       */
      VENDOR_EXTENSION_STRING_PROPERTY = 0x103 + 0x20000000 + 0x01000000 + 0x00100000,
@@ -488,6 +596,22 @@ index 3c877fa..837fa6b
 +     * VehiclePropertyGroup.VENDOR | VehicleArea.GLOBAL | VehiclePropertyGroup.INT32
 +     */
 +    VENDOR_EXTENSION_RRight_Door_PROPERTY = 0x10A + 0x20000000 + 0x01000000 + 0x00400000,
++    
++    
++    
++              /**
++     * Property used for {@code CarVendorPropertyCustomPermissionTest}.
++     *
++     * VehiclePropertyGroup.VENDOR | VehicleArea.GLOBAL | VehiclePropertyGroup.INT32
++     */
++    VENDOR_EXTENSION_ENGINE_STATUS_PROPERTY = 0x10B + 0x20000000 + 0x01000000 + 0x00400000,
++    
++         /**
++     * Property used for {@code CarVendorPropertyCustomPermissionTest}.
++     *
++     * VehiclePropertyGroup.VENDOR | VehicleArea.GLOBAL | VehiclePropertyGroup.INT32
++     */
++    VENDOR_EXTENSION_FUEL_STATUS_PROPERTY = 0x10C + 0x20000000 + 0x01000000 + 0x00400000,
 +    
 +    
 +
