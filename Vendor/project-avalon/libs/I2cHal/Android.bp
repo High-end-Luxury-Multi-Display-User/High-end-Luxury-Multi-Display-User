@@ -1,0 +1,7 @@
+cc_library_shared {
+    name: "libitochal",
+    srcs: ["hali2c.cpp"],
+    shared_libs: ["liblog"],
+    vendor :true,
+
+}
