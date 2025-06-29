@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Main GridLayout UI -->
+    <androidx.gridlayout.widget.GridLayout
+        android:id="@+id/gridLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="16dp"
+        app:columnCount="3"
+        app:rowCount="2"
+        app:useDefaultMargins="true"
+        android:layout_alignParentTop="true"
+        android:layout_above="@+id/bottomControlBar"
+        android:layout_toStartOf="@+id/sidebar"
+        android:background="@color/black">
+
+        <!-- Left Top Fragment -->
+        <FrameLayout
+            android:id="@+id/batteryContainer"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_column="0"
+            app:layout_row="0"
+            app:layout_columnWeight="1.2"
+            app:layout_rowWeight="2" />
+
+        <!-- Main Center Fragment -->
+        <FrameLayout
+            android:id="@+id/mainFragmentContainer"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_column="1"
+            app:layout_row="0"
+            app:layout_rowSpan="2"
+            app:layout_columnWeight="1.5"
+            app:layout_rowWeight="2" />
+
+        <!-- Right Fragment -->
+        <FrameLayout
+            android:id="@+id/rightFragmentContainer"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_column="2"
+            app:layout_row="0"
+            app:layout_rowSpan="2"
+            app:layout_columnWeight="0.8"
+            app:layout_rowWeight="2" />
+    </androidx.gridlayout.widget.GridLayout>
+
+    <!-- Right Sidebar -->
+    <LinearLayout
+        android:id="@+id/sidebar"
+        android:layout_width="100dp"
+        android:layout_height="match_parent"
+        android:layout_alignParentEnd="true"
+        android:orientation="vertical"
+        android:background="@color/black"
+        android:gravity="center"
+        android:elevation="8dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingVertical="40dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="70dp"
+                android:gravity="center"
+                android:orientation="vertical">
+                <ImageView
+                    android:id="@+id/icon_home"
+                    android:layout_width="70dp"
+                    android:layout_height="70dp"
+                    android:background="@drawable/icon_background"
+                    android:contentDescription="Home"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_home"
+                    app:tint="@color/white" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="70dp"
+                android:gravity="center"
+                android:orientation="vertical">
+                <ImageView
+                    android:id="@+id/icon_car"
+                    android:layout_width="70dp"
+                    android:layout_height="70dp"
+                    android:background="@drawable/icon_background"
+                    android:contentDescription="Car"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_car"
+                    app:tint="@color/white" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center">
+                <ImageView
+                    android:id="@+id/icon_settings"
+                    android:layout_width="70dp"
+                    android:layout_height="70dp"
+                    android:background="@drawable/icon_background"
+                    android:contentDescription="Settings"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_settings"
+                    app:tint="@color/white" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Bottom Control Bar -->
+    <LinearLayout
+        android:id="@+id/bottomControlBar"
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
+        android:background="@color/black"
+        android:layout_toStartOf="@+id/sidebar"
+        android:elevation="8dp"
+        android:gravity="center">
+
+        <LinearLayout
+            android:id="@+id/engine_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+            <ImageView
+                android:layout_width="62dp"
+                android:layout_height="57dp"
+                android:contentDescription="Engine"
+                android:src="@drawable/ic_enginegood" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/drowsiness_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+            <ImageView
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@drawable/ic_drowsiness"
+                android:contentDescription="Drowsiness"
+                app:tint="#a47cc4" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/volume_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+            <ImageView
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@drawable/ic_volume"
+                android:contentDescription="Volume"
+                app:tint="#a47cc4" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/light_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+            <ImageView
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@drawable/ic_light"
+                android:contentDescription="Light"
+                app:tint="#a47cc4" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/fuel_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+            <ImageView
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@drawable/fuelgood"
+                android:contentDescription="fuelstates" />
+        </LinearLayout>
+    </LinearLayout>
+
+</RelativeLayout>

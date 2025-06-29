@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission android:name="android.car.permission.READ_CAR_PROPERTY"/>
+    <uses-permission android:name="android.car.permission.WRITE_CAR_PROPERTY"/>
+    <uses-permission android:name="android.car.permission.CAR_VENDOR_EXTENSION" />
 
     <application
         android:allowBackup="true"
@@ -13,7 +16,7 @@
         android:theme="@style/Theme.DriverLauncher"
         tools:targetApi="31">
         <activity
-            android:name=".carvitals.CarVitalsActivity"
+            android:name=".carvitals.MainActivity"
             android:exported="false" />
         <activity
             android:name=".home.HomeActivity"
