@@ -1,0 +1,7 @@
+
+cc_binary {
+    name: "Rpi5GPIOTest",
+    srcs: ["src/*.cpp",],
+    shared_libs: ["libc++", "libgpiod", "libgpiohalrpi5"],
+    vendor: true,
+}

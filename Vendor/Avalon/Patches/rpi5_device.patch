@@ -1,0 +1,26 @@
+diff --git a/aosp_rpi5_car.mk b/aosp_rpi5_car.mk
+index 6c6af0f..5500a9f 100644
+--- a/aosp_rpi5_car.mk
++++ b/aosp_rpi5_car.mk
+@@ -6,7 +6,7 @@
+ 
+ # Inherit device configuration
+ $(call inherit-product, device/brcm/rpi5/device.mk)
+-
++$(call inherit-product, vendor/iti/aosp_rpi5_car_iti.mk)
+ DEVICE_PATH_CAR := device/brcm/rpi5/car
+ 
+ PRODUCT_AAPT_CONFIG := normal mdpi hdpi
+diff --git a/boot/config.txt b/boot/config.txt
+index fb68a37..bd621ac 100644
+--- a/boot/config.txt
++++ b/boot/config.txt
+@@ -20,6 +20,8 @@ dtoverlay=cma,cma-320
+ 
+ # I2C
+ #dtparam=i2c_arm=on
++dtparam=i2c_arm=on
++dtoverlay=ads1115
+ 
+ # I2S
+ #dtparam=i2s=on
