@@ -1,0 +1,12 @@
+diff --git a/rootdir/init.rc b/rootdir/init.rc
+index ae6a658..989c018 100644
+--- a/rootdir/init.rc
++++ b/rootdir/init.rc
+@@ -10,6 +10,7 @@ import /init.${ro.hardware}.rc
+ import /vendor/etc/init/hw/init.${ro.hardware}.rc
+ import /system/etc/init/hw/init.usb.configfs.rc
+ import /system/etc/init/hw/init.${ro.zygote}.rc
++import /init.gpiochip.rc
+ 
+ # Cgroups are mounted right before early-init using list from /etc/cgroups.json
+ on early-init

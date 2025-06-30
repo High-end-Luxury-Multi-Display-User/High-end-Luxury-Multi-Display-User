@@ -1,0 +1,8 @@
+cc_binary {
+    name: "i2cApp",
+    include_dirs: ["vendor/Avalon/I2C_Test/inc",],
+    srcs: ["src/*.cpp",],
+    shared_libs: ["liblog",],
+    vendor: true,
+    cflags: ["-std=c++11"], 
+}
