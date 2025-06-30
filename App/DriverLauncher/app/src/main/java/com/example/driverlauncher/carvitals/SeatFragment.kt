@@ -1,37 +1,87 @@
 package android.vendor.carinfo
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
+import android.widget.ImageView
+import androidx.fragment.app.Fragment
+import android.widget.TextView
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-/**
- * A simple [Fragment] subclass.
- * Use the [SeatFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class SeatFragment : Fragment() {
 
-    private lateinit var tiltView: SeatTiltView
+    private lateinit var backrestDefault: ImageView
+    private lateinit var backrestForward: ImageView
+    private lateinit var backrestReverse: ImageView
+    private lateinit var angleText: TextView
+
+    private enum class SeatPosition {
+        DEFAULT, FORWARD, REVERSE
+    }
+
+    private var currentPosition = SeatPosition.DEFAULT
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        val view = inflater.inflate(R.layout.fragment_seat, container, false)
-        tiltView = view.findViewById(R.id.tiltView)
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+    ): View? {
+        return inflater.inflate(R.layout.fragment_seat, container, false)
+    }
 
-        // Example: update every 2 seconds with dummy potentiometer angle
-        view.postDelayed({
-            tiltView.setBackrestAngle(60f) // Replace with actual sensor input
-        }, 2000)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        return view
+        // Bind views
+        backrestDefault = view.findViewById(R.id.backrestImage)
+        backrestForward = view.findViewById(R.id.backrestForward)
+        backrestReverse = view.findViewById(R.id.backrestReverse)
+        angleText = view.findViewById(R.id.angleText)
+
+        val btnForward = view.findViewById<ImageButton>(R.id.btnForward)
+        val btnReverse = view.findViewById<ImageButton>(R.id.btnReverse)
+
+        // Initial state
+        switchTo(SeatPosition.DEFAULT)
+
+        btnForward.setOnClickListener {
+            when (currentPosition) {
+                SeatPosition.DEFAULT -> switchTo(SeatPosition.FORWARD)
+                SeatPosition.REVERSE -> switchTo(SeatPosition.DEFAULT)
+                SeatPosition.FORWARD -> {} // no change
+            }
+        }
+
+        btnReverse.setOnClickListener {
+            when (currentPosition) {
+                SeatPosition.DEFAULT -> switchTo(SeatPosition.REVERSE)
+                SeatPosition.FORWARD -> switchTo(SeatPosition.DEFAULT)
+                SeatPosition.REVERSE -> {} // no change
+            }
+        }
+    }
+
+    private fun switchTo(position: SeatPosition) {
+        // Hide all
+        backrestDefault.visibility = View.GONE
+        backrestForward.visibility = View.GONE
+        backrestReverse.visibility = View.GONE
+
+        // Show selected
+        when (position) {
+            SeatPosition.DEFAULT -> {
+                backrestDefault.visibility = View.VISIBLE
+                angleText.text = "70°"
+            }
+            SeatPosition.FORWARD -> {
+                backrestForward.visibility = View.VISIBLE
+                angleText.text = "90°"
+            }
+            SeatPosition.REVERSE -> {
+                backrestReverse.visibility = View.VISIBLE
+                angleText.text = "45°"
+            }
+        }
+
+        currentPosition = position
     }
 }
