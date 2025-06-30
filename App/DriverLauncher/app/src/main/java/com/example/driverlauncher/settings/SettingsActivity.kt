@@ -1,5 +1,7 @@
 package com.example.driverlauncher.settings
 
+import android.car.Car
+import android.car.hardware.property.CarPropertyManager
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -13,13 +15,20 @@ import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import com.example.driverlauncher.R
+import com.example.driverlauncher.carvitals.CarVitalsActivity
 import com.example.driverlauncher.home.HomeActivity
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 class SettingsActivity : AppCompatActivity() {
+    val  VENDOR_EXTENSION_Light_CONTROL_PROPERTY:Int = 0x21400106
+    val areaID = 0
+    lateinit var car: Car
+    lateinit var carPropertyManager: CarPropertyManager
+    private var ledState = false // false = off, true = on
 
+    private lateinit var lightIcon: ImageView
     private lateinit var timeTextView: TextView
     private val timeUpdateHandler = Handler(Looper.getMainLooper())
     private lateinit var timeUpdateRunnable: Runnable
@@ -28,6 +37,23 @@ class SettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_settings)
+
+        lightIcon = findViewById(R.id.light_icon) // the ImageView inside the light_button
+
+        val lightButton = findViewById<LinearLayout>(R.id.light_button)
+        lightButton.setOnClickListener {
+            ledState = !ledState
+            setLedState(ledState)
+            updateLightIcon(ledState)
+        }
+
+        car = Car.createCar(this.applicationContext)
+        if (car == null) {
+            Log.e("LED", "Failed to create Car instance")
+        } else {
+            carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
+            Log.d("LED", "CarPropertyManager initialized")
+        }
 
         // Initialize the time TextView
         timeTextView = findViewById(R.id.time) ?: run {
@@ -75,10 +101,17 @@ class SettingsActivity : AppCompatActivity() {
             toggleImage(languageImage, R.drawable.english, R.drawable.arabic)
         }
 
-        // Set click listener for settings icon
+        // Set click listener for home icon
         val homeIcon = findViewById<ImageView>(R.id.icon_home)
         homeIcon.setOnClickListener {
             val intent = Intent(this, HomeActivity::class.java)
+            startActivity(intent)
+        }
+
+        // Set click listener for carVitals icon
+        val carVitalsIcon = findViewById<ImageView>(R.id.icon_car_vitals)
+        carVitalsIcon.setOnClickListener {
+            val intent = Intent(this, CarVitalsActivity::class.java)
             startActivity(intent)
         }
     }
@@ -116,6 +149,29 @@ class SettingsActivity : AppCompatActivity() {
             imageButton.setImageResource(onResource)
         } else {
             imageButton.setImageResource(offResource)
+        }
+    }
+    private fun setLedState(state: Boolean) {
+        val value = if (state) 1 else 0
+        try {
+            synchronized(carPropertyManager) {
+                carPropertyManager.setProperty(
+                    Integer::class.java,
+                    VENDOR_EXTENSION_Light_CONTROL_PROPERTY,
+                    areaID,
+                    Integer(value)
+                )
+                Log.d("LED", "LED state set to: $value")
+            }
+        } catch (e: Exception) {
+            Log.e("LED", "Failed to set LED state", e)
+        }
+    }
+    private fun updateLightIcon(state: Boolean) {
+        if (state) {
+            lightIcon.setImageResource(R.drawable.ic_led_off)
+        } else {
+            lightIcon.setImageResource(R.drawable.ic_led_on)
         }
     }
 }
