@@ -1,4 +1,4 @@
-#include "ads1115.hpp"
+#include "hali2c.h"
 #include <fcntl.h>
 #include <linux/i2c-dev.h>
 #include <stdint.h>
@@ -6,7 +6,10 @@
 #include <unistd.h>
 #include <iostream>
 #include <stdexcept>
-#include <android/log.h>
+
+#define ADS1115_ADDRESS 0x48
+#define ADS1115_CONVERSION_REGISTER 0x00
+#define ADS1115_CONFIG_REGISTER 0x01
 
 int open_i2c(const char* device, int address) {
     int file = open(device, O_RDWR);
@@ -77,7 +80,10 @@ int getI2c() {
     const char* device =
             "/dev/i2c-1";  
     int file = open_i2c(device, ADS1115_ADDRESS);
-    if (file < 0) return 5;
+    if (file < 0) {
+    	__android_log_print(ANDROID_LOG_INFO, "RPi5_GPIO", "Failed to open /dev/gpiochip0");
+    	return 5;
+    }
 
     int channel = 1;  
 
@@ -86,12 +92,10 @@ int getI2c() {
     usleep(10000);
 
     int16_t value = read_ads1115(file);
-    
-    __android_log_print(ANDROID_LOG_INFO, "PotTag", "Pot Value (Lib) = %d", value);
+
 
     sleep(1);
 
     close(file);
     return (int)value;
 }
-
