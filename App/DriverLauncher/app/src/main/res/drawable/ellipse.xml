@@ -11,5 +11,5 @@
     <!-- Border -->
     <stroke
         android:width="2dp"
-        android:color="@color/white" />
+        android:color="@color/icons_colors" />
 </shape>
