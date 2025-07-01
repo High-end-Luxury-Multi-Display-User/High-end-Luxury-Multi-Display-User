@@ -59,6 +59,8 @@ class SettingsActivity : AppCompatActivity() {
         // Initialize views with non-null check
         timeTextView = findViewById(R.id.time)
             ?: throw IllegalStateException("Missing time TextView")
+        val userContainer = findViewById<LinearLayout>(R.id.driver_profile)
+            ?: throw IllegalStateException("Missing user_container")
         val themeContainer = findViewById<LinearLayout>(R.id.theme_container)
             ?: throw IllegalStateException("Missing theme_container")
         val themeImage = findViewById<ImageButton>(R.id.theme_image)
@@ -99,18 +101,41 @@ class SettingsActivity : AppCompatActivity() {
         themeContainer.setOnClickListener {
             toggleImage(themeImage, R.drawable.day, R.drawable.night)
         }
+        themeImage.setOnClickListener {
+            toggleImage(themeImage, R.drawable.day, R.drawable.night)
+        }
         gestureContainer.setOnClickListener {
+            toggleImage(gestureImage, R.drawable.gesture, R.drawable.no_gesture)
+        }
+        gestureImage.setOnClickListener {
             toggleImage(gestureImage, R.drawable.gesture, R.drawable.no_gesture)
         }
         voiceContainer.setOnClickListener {
             toggleImage(voiceImage, R.drawable.voice, R.drawable.no_voice)
         }
+        voiceImage.setOnClickListener {
+            toggleImage(voiceImage, R.drawable.voice, R.drawable.no_voice)
+        }
         languageContainer.setOnClickListener {
+            toggleImage(languageImage, R.drawable.english, R.drawable.arabic)
+        }
+        languageImage.setOnClickListener {
             toggleImage(languageImage, R.drawable.english, R.drawable.arabic)
         }
         homeIcon.setOnClickListener {
             startActivity(Intent(this, HomeActivity::class.java))
         }
+        
+        userContainer.setOnClickListener {
+            val driverIntent = Intent().apply {
+                setClassName(
+                    "com.android.systemui",
+                    "com.android.systemui.car.userpicker.UserPickerActivity"
+                )
+            }
+            startActivity(driverIntent)
+        }
+        
         userIcon.setOnClickListener {
             val driverIntent = Intent().apply {
                 setClassName(
@@ -190,11 +215,11 @@ class SettingsActivity : AppCompatActivity() {
             Log.e("LED", "Failed to set LED state", e)
         }
     }
-    private fun updateLightIcon(state: Boolean) {
+   private fun updateLightIcon(state: Boolean) {
         if (state) {
-            lightIcon.setImageResource(R.drawable.ic_led_off)
+            lightIcon.setImageResource(R.drawable.light_on)
         } else {
-            lightIcon.setImageResource(R.drawable.ic_led_on)
+            lightIcon.setImageResource(R.drawable.light_off)
         }
     }
 }

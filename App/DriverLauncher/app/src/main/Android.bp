@@ -13,8 +13,6 @@ android_app {
         "androidx-constraintlayout_constraintlayout",
         "SpeedViewLib",
         "osmdroid_lib",
-        "android_gif_drawable",
-        "ReLinker",
         "kotlin-stdlib",
         "android.car",
         "com.android.car.internal.dep",

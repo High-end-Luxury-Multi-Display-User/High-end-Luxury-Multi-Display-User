@@ -84,6 +84,18 @@ class HomeActivity : AppCompatActivity() {
             startActivity(intent)
         }
         
+        val userContainer = findViewById<LinearLayout>(R.id.driver_profile)
+            ?: throw IllegalStateException("Missing user_container")
+        userContainer.setOnClickListener {
+            val driverIntent = Intent().apply {
+                setClassName(
+                    "com.android.systemui",
+                    "com.android.systemui.car.userpicker.UserPickerActivity"
+                )
+            }
+            startActivity(driverIntent)
+        }
+        
         val userIcon = findViewById<ImageView>(R.id.user_profile)!!
         userIcon?.setOnClickListener {
             val driverIntent = Intent().apply {
@@ -165,9 +177,9 @@ class HomeActivity : AppCompatActivity() {
     }
     private fun updateLightIcon(state: Boolean) {
         if (state) {
-            lightIcon.setImageResource(R.drawable.ic_led_off)
+            lightIcon.setImageResource(R.drawable.light_on)
         } else {
-            lightIcon.setImageResource(R.drawable.ic_led_on)
+            lightIcon.setImageResource(R.drawable.light_off)
         }
     }
 }
