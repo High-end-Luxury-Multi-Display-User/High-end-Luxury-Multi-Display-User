@@ -148,9 +148,9 @@ class HomeActivity : AppCompatActivity() {
     }
     private fun updateLightIcon(state: Boolean) {
         if (state) {
-            lightIcon.setImageResource(R.drawable.ic_led_off)
+            lightIcon.setImageResource(R.drawable.light_on)
         } else {
-            lightIcon.setImageResource(R.drawable.ic_led_on)
+            lightIcon.setImageResource(R.drawable.light_off)
         }
     }
 }
