@@ -18,7 +18,6 @@ import com.example.driverlauncher.settings.SettingsActivity
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import android.os.UserManager
 
 class CarVitalsActivity : AppCompatActivity() {
     val  VENDOR_EXTENSION_Light_CONTROL_PROPERTY:Int = 0x21400106
@@ -49,15 +48,15 @@ class CarVitalsActivity : AppCompatActivity() {
             }
         }
 
-        lightIcon = findViewById<ImageView>(R.id.light_icon)!! // the ImageView inside the light_button
+        lightIcon = findViewById(R.id.light_icon) // the ImageView inside the light_button
 
-        val lightButton = findViewById<LinearLayout>(R.id.light_button)!!
+        val lightButton = findViewById<LinearLayout>(R.id.light_button)
         lightButton.setOnClickListener {
             ledState = !ledState
             setLedState(ledState)
             updateLightIcon(ledState)
         }
-        car = Car.createCar(this.applicationContext)!!
+        car = Car.createCar(this.applicationContext)
         if (car == null) {
             Log.e("LED", "Failed to create Car instance")
         } else {
@@ -71,30 +70,16 @@ class CarVitalsActivity : AppCompatActivity() {
             .commit()
 
         hideSystemBars()
-        
-         // Load user name safely
-        val userManager = getSystemService(UserManager::class.java)
-        val userName = try {
-            userManager?.getUserName()
-        } catch (e: SecurityException) {
-            Log.e("SettingsActivity", "Missing permission to get user name", e)
-            null
-        }
-        
-        val profileName = findViewById<TextView>(R.id.profile_name)
-            ?: throw IllegalStateException("Missing profile_name")
-
-        profileName.text = userName ?: "Unknown User"
 
         // Set click listener for home icon
-        val homeIcon = findViewById<ImageView>(R.id.icon_home)!!
+        val homeIcon = findViewById<ImageView>(R.id.icon_home)
         homeIcon.setOnClickListener {
             val intent = Intent(this, HomeActivity::class.java)
             startActivity(intent)
         }
 
         // Set click listener for settings icon
-        val settingsIcon = findViewById<ImageView>(R.id.icon_settings)!!
+        val settingsIcon = findViewById<ImageView>(R.id.icon_settings)
         settingsIcon.setOnClickListener {
             val intent = Intent(this, SettingsActivity::class.java)
             startActivity(intent)

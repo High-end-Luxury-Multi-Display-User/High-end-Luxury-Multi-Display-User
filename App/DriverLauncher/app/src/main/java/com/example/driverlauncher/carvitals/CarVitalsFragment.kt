@@ -40,10 +40,10 @@ class CarVitalsFragment : Fragment() {
     private val updateTask = object : Runnable {
         override fun run() {
             try {
-                updateDoorVisibility(openDoorFL, closedDoorFL, VENDOR_EXTENSION_FLeft_Door_PROPERTY, "FL")
-                updateDoorVisibility(openDoorFR, closedDoorFR, VENDOR_EXTENSION_FRight_Door_PROPERTY, "FR")
-                updateDoorVisibility(openDoorRL, closedDoorRL, VENDOR_EXTENSION_RLeft_Door_PROPERTY, "RL")
-                updateDoorVisibility(openDoorRR, closedDoorRR, VENDOR_EXTENSION_RRight_Door_PROPERTY, "RR")
+                updateDoorVisibility(openDoorFL,closedDoorFL, VENDOR_EXTENSION_FLeft_Door_PROPERTY, "FL")
+                updateDoorVisibility(openDoorFR,closedDoorFR, VENDOR_EXTENSION_FRight_Door_PROPERTY, "FR")
+                updateDoorVisibility(openDoorRL,closedDoorRL, VENDOR_EXTENSION_RLeft_Door_PROPERTY, "RL")
+                updateDoorVisibility(openDoorRR,closedDoorRR, VENDOR_EXTENSION_RRight_Door_PROPERTY, "RR")
             } catch (e: Exception) {
                 Log.e("CarDoors", "Error reading door states", e)
             } finally {
@@ -62,19 +62,18 @@ class CarVitalsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Use explicit type + !! to force unwrap
-        closedDoorFL = view.findViewById<ImageView>(R.id.closed_door_fl)!!
-        closedDoorFR = view.findViewById<ImageView>(R.id.closed_door_fr)!!
-        closedDoorRL = view.findViewById<ImageView>(R.id.closed_door_rl)!!
-        closedDoorRR = view.findViewById<ImageView>(R.id.closed_door_rr)!!
+        closedDoorFL = view.findViewById(R.id.closed_door_fl)
+        closedDoorFR = view.findViewById(R.id.closed_door_fr)
+        closedDoorRL = view.findViewById(R.id.closed_door_rl)
+        closedDoorRR = view.findViewById(R.id.closed_door_rr)
 
-        openDoorFL = view.findViewById<ImageView>(R.id.open_door_fl)!!
-        openDoorFR = view.findViewById<ImageView>(R.id.open_door_fr)!!
-        openDoorRL = view.findViewById<ImageView>(R.id.open_door_rl)!!
-        openDoorRR = view.findViewById<ImageView>(R.id.open_door_rr)!!
+        openDoorFL = view.findViewById(R.id.open_door_fl)
+        openDoorFR = view.findViewById(R.id.open_door_fr)
+        openDoorRL = view.findViewById(R.id.open_door_rl)
+        openDoorRR = view.findViewById(R.id.open_door_rr)
 
         try {
-            car = Car.createCar(requireContext().applicationContext)!!
+            car = Car.createCar(requireContext().applicationContext)
             carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
         } catch (e: Exception) {
             Log.e("CarDoors", "Car init failed", e)
@@ -84,18 +83,14 @@ class CarVitalsFragment : Fragment() {
         handler.post(updateTask) // Start periodic polling
     }
 
-    private fun updateDoorVisibility(
-        openDoorImage: ImageView,
-        closedDoorImage: ImageView,
-        propertyId: Int,
-        label: String
-    ) {
+    private fun updateDoorVisibility(openDoorImage: ImageView,closedDoorImage: ImageView, propertyId: Int, label: String) {
         try {
-            val carPropValue = carPropertyManager.getProperty(Integer::class.java, propertyId, areaID)
+            val carPropValue =
+                carPropertyManager.getProperty(Integer::class.java, propertyId, areaID)
             if (carPropValue != null) {
                 val isOpen = carPropValue.value.toInt() == 1
-                openDoorImage.visibility = if (isOpen) View.VISIBLE else View.GONE
-                closedDoorImage.visibility = if (isOpen) View.GONE else View.VISIBLE
+                openDoorImage.visibility = if (isOpen) View.VISIBLE else View.GONE  // set the open door visible
+                closedDoorImage.visibility = if (isOpen) View.GONE else View.VISIBLE  // set the closed door visible
                 Log.d("CarDoors", "Door $label state: ${carPropValue.value}")
             }
         } catch (e: Exception) {
@@ -103,9 +98,9 @@ class CarVitalsFragment : Fragment() {
         }
     }
 
+
     override fun onDestroyView() {
         super.onDestroyView()
-        handler.removeCallbacks(updateTask)
+        handler.removeCallbacks(updateTask) // Stop when fragment is destroyed
     }
 }
-

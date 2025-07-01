@@ -82,4 +82,3 @@ class DashboardFragment : Fragment() {
         speedView.speedTo(speed, 1000)
     }
 }
-

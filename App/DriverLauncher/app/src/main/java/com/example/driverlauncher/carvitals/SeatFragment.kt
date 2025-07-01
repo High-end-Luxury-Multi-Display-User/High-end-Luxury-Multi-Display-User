@@ -33,13 +33,13 @@ class SeatFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         // Bind views
-        backrestDefault = view.findViewById(R.id.backrestImage)!!
-        backrestForward = view.findViewById(R.id.backrestForward)!!
-        backrestReverse = view.findViewById(R.id.backrestReverse)!!
-        angleText = view.findViewById(R.id.angleText)!!
+        backrestDefault = view.findViewById(R.id.backrestImage)
+        backrestForward = view.findViewById(R.id.backrestForward)
+        backrestReverse = view.findViewById(R.id.backrestReverse)
+        angleText = view.findViewById(R.id.angleText)
 
-        val btnForward = view.findViewById<ImageButton>(R.id.btnForward)!!
-        val btnReverse = view.findViewById<ImageButton>(R.id.btnReverse)!!
+        val btnForward = view.findViewById<ImageButton>(R.id.btnForward)
+        val btnReverse = view.findViewById<ImageButton>(R.id.btnReverse)
 
         // Initial state
         switchTo(SeatPosition.DEFAULT)

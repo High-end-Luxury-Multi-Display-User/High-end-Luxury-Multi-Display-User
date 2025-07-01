@@ -13,7 +13,8 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
-
+        // for car vitals
+        useLibrary("android.car")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -42,6 +43,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.gridlayout)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -51,4 +53,6 @@ dependencies {
     implementation("com.github.anastr:speedviewlib:1.6.1")
     implementation("com.airbnb.android:lottie:6.4.0")
     implementation("pl.droidsonroids.gif:android-gif-drawable:1.2.22")
+    // for car vitals
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3" )
 }

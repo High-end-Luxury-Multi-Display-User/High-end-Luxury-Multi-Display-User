@@ -14,7 +14,7 @@
         android:layout_weight="1"
         app:cardCornerRadius="26dp"
         app:cardElevation="4dp"
-        app:cardBackgroundColor="#000000"
+        app:cardBackgroundColor="@color/triangles_color"
         android:layout_marginBottom="8dp">
 
         <FrameLayout
@@ -33,11 +33,12 @@
                 app:sv_speedTextSize="32sp"
                 app:sv_startDegree="143"
                 app:sv_endDegree="397"
-                app:sv_speedTextColor="#FFFFFF"
-                app:sv_backgroundCircleColor="#000000"
+
+                app:sv_speedTextColor="@color/speed_text_color"
+                app:sv_backgroundCircleColor="@color/background_circle_color"
                 app:sv_speedometerColor="@color/luxoft_purple"
                 app:sv_indicatorColor="@color/luxoft_purple"
-                app:sv_trianglesColor="#000000"
+                app:sv_trianglesColor="@color/triangles_color"
                 app:sv_withTremble="false" />
 
             <ImageView
@@ -58,7 +59,8 @@
 
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:background="color/triangles_color">
 
             <!-- Fallback image while video loads -->
             <ImageView

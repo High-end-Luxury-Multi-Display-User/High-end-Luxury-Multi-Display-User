@@ -20,7 +20,6 @@ import com.example.driverlauncher.home.HomeActivity
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import android.os.UserManager
 
 class SettingsActivity : AppCompatActivity() {
     val  VENDOR_EXTENSION_Light_CONTROL_PROPERTY:Int = 0x21400106
@@ -39,104 +38,82 @@ class SettingsActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_settings)
 
-        lightIcon = findViewById(R.id.light_icon)!! // the ImageView inside the light_button
+        lightIcon = findViewById(R.id.light_icon) // the ImageView inside the light_button
 
-        val lightButton = findViewById<LinearLayout>(R.id.light_button)!!
+        val lightButton = findViewById<LinearLayout>(R.id.light_button)
         lightButton.setOnClickListener {
             ledState = !ledState
             setLedState(ledState)
             updateLightIcon(ledState)
         }
 
-        car = Car.createCar(this.applicationContext)!!
+        car = Car.createCar(this.applicationContext)
         if (car == null) {
             Log.e("LED", "Failed to create Car instance")
         } else {
             carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
             Log.d("LED", "CarPropertyManager initialized")
         }
-        
-        // Initialize views with non-null check
-        timeTextView = findViewById(R.id.time)
-            ?: throw IllegalStateException("Missing time TextView")
-        val themeContainer = findViewById<LinearLayout>(R.id.theme_container)
-            ?: throw IllegalStateException("Missing theme_container")
-        val themeImage = findViewById<ImageButton>(R.id.theme_image)
-            ?: throw IllegalStateException("Missing theme_image")
-        val gestureContainer = findViewById<LinearLayout>(R.id.gesture_container)
-            ?: throw IllegalStateException("Missing gesture_container")
-        val gestureImage = findViewById<ImageButton>(R.id.gesture_image)
-            ?: throw IllegalStateException("Missing gesture_image")
-        val voiceContainer = findViewById<LinearLayout>(R.id.voice_container)
-            ?: throw IllegalStateException("Missing voice_container")
-        val voiceImage = findViewById<ImageButton>(R.id.voice_image)
-            ?: throw IllegalStateException("Missing voice_image")
-        val languageContainer = findViewById<LinearLayout>(R.id.language_container)
-            ?: throw IllegalStateException("Missing language_container")
-        val languageImage = findViewById<ImageButton>(R.id.language_image)
-            ?: throw IllegalStateException("Missing language_image")
-        val homeIcon = findViewById<ImageView>(R.id.icon_home)
-            ?: throw IllegalStateException("Missing icon_home")
-        val userIcon = findViewById<ImageView>(R.id.user_profile)
-            ?: throw IllegalStateException("Missing user_profile")
-        val profileName = findViewById<TextView>(R.id.profile_name)
-            ?: throw IllegalStateException("Missing profile_name")
 
-        // Hide system navigation bar (for automotive)
-        hideSystemNavigationBar()
-
+        // Initialize the time TextView
+        timeTextView = findViewById(R.id.time) ?: run {
+            Log.e("TimeUpdate", "Time TextView not found!")
+            return
+        }
         // Initialize time updater
         timeUpdateRunnable = object : Runnable {
             override fun run() {
                 updateTime()
-                timeUpdateHandler.postDelayed(this, 60000) // every minute
+                timeUpdateHandler.postDelayed(this, 60000) // Update every minute
             }
         }
+
+        // Update time immediately and schedule updates
         updateTime()
         timeUpdateHandler.postDelayed(timeUpdateRunnable, 60000)
+        hideSystemNavigationBar()
 
-        // Setup click listeners
+        // Theme Switch
+        val themeContainer = findViewById<LinearLayout>(R.id.theme_container)
+        val themeImage = findViewById<ImageButton>(R.id.theme_image)
         themeContainer.setOnClickListener {
             toggleImage(themeImage, R.drawable.day, R.drawable.night)
         }
+
+        // Gesture Control Switch
+        val gestureContainer = findViewById<LinearLayout>(R.id.gesture_container)
+        val gestureImage = findViewById<ImageButton>(R.id.gesture_image)
         gestureContainer.setOnClickListener {
             toggleImage(gestureImage, R.drawable.gesture, R.drawable.no_gesture)
         }
+
+        // Voice Assist Switch
+        val voiceContainer = findViewById<LinearLayout>(R.id.voice_container)
+        val voiceImage = findViewById<ImageButton>(R.id.voice_image)
         voiceContainer.setOnClickListener {
             toggleImage(voiceImage, R.drawable.voice, R.drawable.no_voice)
         }
+
+        // Language Switch
+        val languageContainer = findViewById<LinearLayout>(R.id.language_container)
+        val languageImage = findViewById<ImageButton>(R.id.language_image)
         languageContainer.setOnClickListener {
             toggleImage(languageImage, R.drawable.english, R.drawable.arabic)
         }
+
+        // Set click listener for home icon
+        val homeIcon = findViewById<ImageView>(R.id.icon_home)
         homeIcon.setOnClickListener {
-            startActivity(Intent(this, HomeActivity::class.java))
+            val intent = Intent(this, HomeActivity::class.java)
+            startActivity(intent)
         }
-        userIcon.setOnClickListener {
-            val driverIntent = Intent().apply {
-                setClassName(
-                    "com.android.systemui",
-                    "com.android.systemui.car.userpicker.UserPickerActivity"
-                )
-            }
-            startActivity(driverIntent)
-        }
-        
+
         // Set click listener for carVitals icon
-        val carVitalsIcon = findViewById<ImageView>(R.id.icon_car_vitals)!!
+        val carVitalsIcon = findViewById<ImageView>(R.id.icon_car_vitals)
         carVitalsIcon.setOnClickListener {
             val intent = Intent(this, CarVitalsActivity::class.java)
             startActivity(intent)
         }
-
-        // Load user name safely
-        val userManager = getSystemService(UserManager::class.java)
-        val userName = try {
-            userManager?.getUserName()
-        } catch (e: SecurityException) {
-            Log.e("SettingsActivity", "Missing permission to get user name", e)
-            null
-        }
-        profileName.text = userName ?: "Unknown User"
     }
 
     private fun hideSystemNavigationBar() {
@@ -164,17 +141,17 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        timeUpdateHandler.removeCallbacks(timeUpdateRunnable)
+        timeUpdateHandler.removeCallbacks(timeUpdateRunnable) // Clean up
     }
 
     private fun toggleImage(imageButton: ImageButton, offResource: Int, onResource: Int) {
-        if (imageButton.drawable.constantState == resources.getDrawable(offResource, theme).constantState) {
+        if (imageButton.drawable.constantState == resources.getDrawable(offResource).constantState) {
             imageButton.setImageResource(onResource)
         } else {
             imageButton.setImageResource(offResource)
         }
     }
-     private fun setLedState(state: Boolean) {
+    private fun setLedState(state: Boolean) {
         val value = if (state) 1 else 0
         try {
             synchronized(carPropertyManager) {
@@ -198,4 +175,3 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 }
-

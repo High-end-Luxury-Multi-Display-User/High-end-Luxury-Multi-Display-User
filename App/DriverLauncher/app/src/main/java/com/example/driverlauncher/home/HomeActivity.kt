@@ -11,7 +11,6 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.os.UserManager
 import androidx.appcompat.app.AppCompatActivity
 import com.example.driverlauncher.R
 import com.example.driverlauncher.carvitals.CarVitalsActivity
@@ -35,23 +34,23 @@ class HomeActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
 
- 	lightIcon = findViewById(R.id.light_icon)!! // the ImageView inside the light_button
+        lightIcon = findViewById(R.id.light_icon) // the ImageView inside the light_button
 
-        val lightButton = findViewById<LinearLayout>(R.id.light_button)!!
+        val lightButton = findViewById<LinearLayout>(R.id.light_button)
         lightButton.setOnClickListener {
             ledState = !ledState
             setLedState(ledState)
             updateLightIcon(ledState)
         }
 
-        car = Car.createCar(this.applicationContext)!!
+        car = Car.createCar(this.applicationContext)
         if (car == null) {
             Log.e("LED", "Failed to create Car instance")
         } else {
             carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
             Log.d("LED", "CarPropertyManager initialized")
         }
-        
+
         // Initialize the time TextView
         timeTextView = findViewById(R.id.time) ?: run {
             Log.e("TimeUpdate", "Time TextView not found!")
@@ -78,35 +77,18 @@ class HomeActivity : AppCompatActivity() {
         }
 
         // Set click listener for settings icon
-        val settingsIcon = findViewById<ImageView>(R.id.icon_settings)!!
-        settingsIcon?.setOnClickListener {
+        val settingsIcon = findViewById<ImageView>(R.id.icon_settings)
+        settingsIcon.setOnClickListener {
             val intent = Intent(this, SettingsActivity::class.java)
             startActivity(intent)
         }
-        
-        val userIcon = findViewById<ImageView>(R.id.user_profile)!!
-        userIcon?.setOnClickListener {
-            val driverIntent = Intent().apply {
-                setClassName(
-                    "com.android.systemui",
-                    "com.android.systemui.car.userpicker.UserPickerActivity"
-                )
-            }
-            startActivity(driverIntent)
-        }
-        
+
         // Set click listener for carVitals icon
-        val carVitalsIcon = findViewById<ImageView>(R.id.icon_car_vitals)!!
+        val carVitalsIcon = findViewById<ImageView>(R.id.icon_car_vitals)
         carVitalsIcon.setOnClickListener {
             val intent = Intent(this, CarVitalsActivity::class.java)
             startActivity(intent)
         }
-        
-        val profileName = findViewById<TextView>(R.id.profile_name)!!
-        val userManager = getSystemService(UserManager::class.java)
-	val userName = userManager?.getUserName()
-	profileName?.text = userName ?: "Unknown User"
-
 
         // Update time immediately and schedule updates
         updateTime()
@@ -147,7 +129,8 @@ class HomeActivity : AppCompatActivity() {
             hideSystemBars()
         }
     }
-     private fun setLedState(state: Boolean) {
+
+    private fun setLedState(state: Boolean) {
         val value = if (state) 1 else 0
         try {
             synchronized(carPropertyManager) {

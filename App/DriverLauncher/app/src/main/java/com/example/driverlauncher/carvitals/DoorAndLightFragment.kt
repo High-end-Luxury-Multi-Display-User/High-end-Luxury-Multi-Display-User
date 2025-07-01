@@ -37,10 +37,10 @@ class DoorAndLightFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        progressBar = view.findViewById(R.id.progressBar)!!
-        toggleButton = view.findViewById(R.id.btnToggleLed)!!
+        progressBar = view.findViewById(R.id.progressBar)
+        toggleButton = view.findViewById(R.id.btnToggleLed)
 
-        car = Car.createCar(requireContext())!!
+        car = Car.createCar(requireContext())
         carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
 
         toggleButton.setOnClickListener {

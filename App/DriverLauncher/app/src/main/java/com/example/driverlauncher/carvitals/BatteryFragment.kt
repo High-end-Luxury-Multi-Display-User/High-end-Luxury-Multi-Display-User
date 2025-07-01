@@ -60,16 +60,16 @@ class BatteryFragment : Fragment(R.layout.fragment_battery) {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_battery, container, false)
 
-        circleProgress = view.findViewById<ProgressBar>(R.id.circleProgress)!!
-	rangeText = view.findViewById<TextView>(R.id.rangeText)!!
-	batteryText = view.findViewById<TextView>(R.id.text_battery)!!
-	consumptionText = view.findViewById<TextView>(R.id.text_consumption)!!
-	chargerText = view.findViewById<TextView>(R.id.text_charger)!!
-	efficiencyText = view.findViewById<TextView>(R.id.text_efficiency)!!
+        circleProgress = view.findViewById(R.id.circleProgress)
+        rangeText = view.findViewById(R.id.rangeText)
+        batteryText = view.findViewById(R.id.text_battery)
+        consumptionText = view.findViewById(R.id.text_consumption)
+        chargerText = view.findViewById(R.id.text_charger)
+        efficiencyText = view.findViewById(R.id.text_efficiency)
 
         try {
-           car = Car.createCar(requireContext().applicationContext)!!
-	   carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
+            car = Car.createCar(requireContext().applicationContext)
+            carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
         } catch (e: Exception) {
             Log.e("BatteryFragment", "Car manager init failed", e)
             return view

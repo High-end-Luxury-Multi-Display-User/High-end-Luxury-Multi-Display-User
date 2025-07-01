@@ -23,33 +23,33 @@
 
     <ImageView
         android:id="@+id/open_door_rl"
-        android:layout_width="133dp"
-        android:layout_height="95dp"
+        android:layout_width="50dp"
+        android:layout_height="140dp"
         android:rotation="-360"
-        android:rotationX="-5"
-        android:rotationY="-3"
-        android:scaleType="fitCenter"
-        android:src="@drawable/car_open_bl"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.102"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.652" />
-
-    <ImageView
-        android:id="@+id/closed_door_rl"
-        android:layout_width="40dp"
-        android:layout_height="104dp"
         android:rotationX="0.0"
         android:rotationY="10"
-        android:scaleType="centerCrop"
-        android:src="@drawable/car_closed_bl"
+        android:scaleType="fitXY"
+        android:src="@drawable/car_open_bl"
         android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.212"
+        app:layout_constraintHorizontal_bias="0.19"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.685" />
+
+    <ImageView
+        android:id="@+id/closed_door_rl"
+        android:layout_width="50dp"
+        android:layout_height="140dp"
+        android:rotationX="0.0"
+        android:rotationY="10"
+        android:scaleType="fitXY"
+        android:src="@drawable/car_closed_bl"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.19"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.685" />
@@ -70,14 +70,14 @@
 
     <ImageView
         android:id="@+id/closed_door_rr"
-        android:layout_width="40dp"
-        android:layout_height="115dp"
-        android:scaleType="centerInside"
+        android:layout_width="50dp"
+        android:layout_height="140dp"
+        android:scaleType="fitXY"
         android:src="@drawable/car_closed_br"
-        android:visibility="visible"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.79"
+        app:layout_constraintHorizontal_bias="0.808"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.685"/>
@@ -99,14 +99,14 @@
 
     <ImageView
         android:id="@+id/closed_door_fl"
-        android:layout_width="85dp"
-        android:layout_height="100dp"
-        android:scaleType="centerInside"
+        android:layout_width="60dp"
+        android:layout_height="150dp"
+        android:scaleType="fitXY"
         android:src="@drawable/car_closed_fl"
-        android:visibility="visible"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.15"
+        app:layout_constraintHorizontal_bias="0.19"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.4" />
@@ -127,17 +127,17 @@
 
     <ImageView
         android:id="@+id/closed_door_fr"
-        android:layout_width="85dp"
-        android:layout_height="100dp"
-        android:scaleType="centerInside"
+        android:layout_width="60dp"
+        android:layout_height="150dp"
+        android:scaleType="fitXY"
         android:src="@drawable/car_closed_fr"
-        android:visibility="visible"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.85"
+        app:layout_constraintHorizontal_bias="0.808"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.397" />
+        app:layout_constraintVertical_bias="0.4" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline"
