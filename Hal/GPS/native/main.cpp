@@ -11,9 +11,9 @@
 int main() {
     ABinderProcess_setThreadPoolMaxThreadCount(0);
 
-    std::shared_ptr<aidl::android::vendor::gps::Neo7mGpsService> service = ndk::SharedRefBase::make<aidl::android::vendor::gps::Neo7mGpsService>();
+    std::shared_ptr<aidl::com::example::driverlauncher::Neo7mGpsService> service = ndk::SharedRefBase::make<aidl::com::example::driverlauncher::Neo7mGpsService>();
 
-    const std::string instance = std::string() + aidl::android::vendor::gps::Neo7mGpsService::descriptor + "/default";
+    const std::string instance = std::string() + aidl::com::example::driverlauncher::Neo7mGpsService::descriptor + "/default";
    binder_status_t status = AServiceManager_addService(service->asBinder().get(), instance.c_str());
     LOG(INFO) << "Registering service with name: " << instance;
 

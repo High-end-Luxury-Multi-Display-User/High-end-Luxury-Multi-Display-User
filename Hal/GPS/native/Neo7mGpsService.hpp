@@ -1,10 +1,10 @@
 
 #pragma once
 
-#include <aidl/android/vendor/gps/BnGpsService.h>
+#include <aidl/com/example/driverlauncher/BnGpsService.h>
 #include <Neo7mGps.hpp>
 
-namespace aidl::android::vendor::gps {
+namespace aidl::com::example::driverlauncher {
 
 class Neo7mGpsService : public BnGpsService {
 public:

@@ -38,28 +38,55 @@ void Neo7mGps::stop() {
     pthread_join(gps_thread, nullptr);
 }
 
-double Neo7mGps::getLatitude() const { return latitude; }
-double Neo7mGps::getLongitude() const { return longitude; }
-float Neo7mGps::getSpeed() const { return speed; }
+double Neo7mGps::getLatitude() const {
+    pthread_mutex_lock(&lock);
+    double val = latitude;
+    pthread_mutex_unlock(&lock);
+    return val;
+}
+
+double Neo7mGps::getLongitude() const {
+    pthread_mutex_lock(&lock);
+    double val = longitude;
+    pthread_mutex_unlock(&lock);
+    return val;
+}
+
+float Neo7mGps::getSpeed() const {
+    pthread_mutex_lock(&lock);
+    float val = speed;
+    pthread_mutex_unlock(&lock);
+    return val;
+}
 
 void* Neo7mGps::gpsThread(void* arg) {
     auto* self = static_cast<Neo7mGps*>(arg);
     char buffer[1024];
+    std::string sentenceBuffer;
+
     while (self->running) {
         int len = read(self->uart_fd, buffer, sizeof(buffer) - 1);
         if (len > 0) {
             buffer[len] = '\0';
-            if (strstr(buffer, "$GPRMC")) {
-                self->parseGPRMC(buffer);
+            for (int i = 0; i < len; ++i) {
+                if (buffer[i] == '\n') {
+                    if (!sentenceBuffer.empty() && sentenceBuffer.find("$GPRMC") != std::string::npos) {
+                        self->parseGPRMC(sentenceBuffer);
+                    }
+                    sentenceBuffer.clear();
+                } else if (buffer[i] != '\r') {
+                    sentenceBuffer += buffer[i];
+                }
             }
         }
     }
     return nullptr;
 }
 
-void Neo7mGps::parseGPRMC(const char* line) {
-    std::string sentence(line);
-    std::stringstream ss(sentence);
+void Neo7mGps::parseGPRMC(const std::string& line) {
+    LOGI("Received: %s", line.c_str());
+
+    std::stringstream ss(line);
     std::string token;
     std::vector<std::string> parts;
 
@@ -69,20 +96,32 @@ void Neo7mGps::parseGPRMC(const char* line) {
 
     if (parts.size() > 7 && parts[2] == "A") {
         char* endPtr = nullptr;
+
+        // Latitude
         double rawLat = strtod(parts[3].c_str(), &endPtr);
-        if (endPtr == parts[3].c_str()) return;
-        latitude = (int)(rawLat / 100) + (rawLat - (int)(rawLat / 100) * 100) / 60.0;
-        if (parts[4] == "S") latitude *= -1;
+        if (*endPtr != '\0') return;
+        double lat = (int)(rawLat / 100) + (rawLat - (int)(rawLat / 100) * 100) / 60.0;
+        if (parts[4] == "S") lat *= -1;
 
+        // Longitude
         double rawLon = strtod(parts[5].c_str(), &endPtr);
-        if (endPtr == parts[5].c_str()) return;
-        longitude = (int)(rawLon / 100) + (rawLon - (int)(rawLon / 100) * 100) / 60.0;
-        if (parts[6] == "W") longitude *= -1;
+        if (*endPtr != '\0') return;
+        double lon = (int)(rawLon / 100) + (rawLon - (int)(rawLon / 100) * 100) / 60.0;
+        if (parts[6] == "W") lon *= -1;
 
+        // Speed (in knots)
         float knots = strtof(parts[7].c_str(), &endPtr);
-        speed = (endPtr == parts[7].c_str()) ? 0.0f : knots * 1.852f;
+        float spd = (*endPtr == '\0') ? knots * 1.852f : 0.0f;
 
-        LOGI("Parsed: lat=%.6f, lon=%.6f, speed=%.2f", latitude, longitude, speed);
+        pthread_mutex_lock(&lock);
+        latitude = lat;
+        longitude = lon;
+        speed = spd;
+        pthread_mutex_unlock(&lock);
+
+        LOGI("Parsed: lat=%.6f, lon=%.6f, speed=%.2f", lat, lon, spd);
+    } else {
+        LOGI("GPRMC not valid or no fix.");
     }
 }
 
@@ -92,6 +131,7 @@ void Neo7mGps::configureUart(int fd) {
 
     cfsetospeed(&tty, B9600);
     cfsetispeed(&tty, B9600);
+
     tty.c_cflag |= (CLOCAL | CREAD);
     tty.c_cflag &= ~CSIZE;
     tty.c_cflag |= CS8;

@@ -1,6 +1,6 @@
 aidl_interface {
-    name: "android.vendor.gps",
-    srcs: ["android/vendor/gps/IGpsService.aidl"],
+    name: "com.example.driverlauncher",
+    srcs: ["com/example/driverlauncher/IGpsService.aidl"],
     stability: "vintf",
     backend: {
         ndk: {
