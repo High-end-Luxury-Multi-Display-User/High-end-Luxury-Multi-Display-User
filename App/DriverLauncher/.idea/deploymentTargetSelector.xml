@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-07-01T08:35:14.928773746Z">
+        <DropdownSelection timestamp="2025-07-01T15:18:52.840674525Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=/home/mariam/.android/avd/LCD_Display.avd" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=/home/fatma/.android/avd/RPI7.avd" />
             </handle>
           </Target>
         </DropdownSelection>
