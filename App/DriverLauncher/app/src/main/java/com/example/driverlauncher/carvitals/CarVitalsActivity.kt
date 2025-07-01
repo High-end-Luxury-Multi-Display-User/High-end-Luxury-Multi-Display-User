@@ -145,6 +145,7 @@ class CarVitalsActivity : AppCompatActivity() {
             Log.e("LED", "Failed to set LED state", e)
         }
     }
+
     private fun updateLightIcon(state: Boolean) {
         if (state) {
             lightIcon.setImageResource(R.drawable.light_on)
