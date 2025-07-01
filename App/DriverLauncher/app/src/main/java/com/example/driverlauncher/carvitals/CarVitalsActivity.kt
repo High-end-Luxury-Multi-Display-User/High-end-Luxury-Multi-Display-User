@@ -30,23 +30,10 @@ class CarVitalsActivity : AppCompatActivity() {
     private lateinit var timeTextView: TextView
     private val timeUpdateHandler = Handler(Looper.getMainLooper())
     private lateinit var timeUpdateRunnable: Runnable
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_car_vitals)
-
-        // Initialize the time TextView
-        timeTextView = findViewById(R.id.time) ?: run {
-            Log.e("TimeUpdate", "Time TextView not found!")
-            return
-        }
-
-        // Initialize time updater
-        timeUpdateRunnable = object : Runnable {
-            override fun run() {
-                updateTime()
-                timeUpdateHandler.postDelayed(this, 60000) // Update every minute
-            }
-        }
 
         lightIcon = findViewById(R.id.light_icon) // the ImageView inside the light_button
 
@@ -56,6 +43,7 @@ class CarVitalsActivity : AppCompatActivity() {
             setLedState(ledState)
             updateLightIcon(ledState)
         }
+
         car = Car.createCar(this.applicationContext)
         if (car == null) {
             Log.e("LED", "Failed to create Car instance")
@@ -63,13 +51,30 @@ class CarVitalsActivity : AppCompatActivity() {
             carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
             Log.d("LED", "CarPropertyManager initialized")
         }
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.batteryContainer, BatteryFragment())
-            .replace(R.id.mainFragmentContainer,CarVitalsFragment())
-            .replace(R.id.rightFragmentContainer, SeatFragment())
-            .commit()
+
+        // Initialize the time TextView
+        timeTextView = findViewById(R.id.time) ?: run {
+            Log.e("TimeUpdate", "Time TextView not found!")
+            return
+        }
 
         hideSystemBars()
+
+        // Initialize time updater
+        timeUpdateRunnable = object : Runnable {
+            override fun run() {
+                updateTime()
+                timeUpdateHandler.postDelayed(this, 60000) // Update every minute
+            }
+        }
+
+        if (savedInstanceState == null) {
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.batteryContainer, BatteryFragment())
+                .replace(R.id.mainFragmentContainer, CarVitalsFragment())
+                .replace(R.id.rightFragmentContainer, SeatFragment())
+                .commit()
+        }
 
         // Set click listener for home icon
         val homeIcon = findViewById<ImageView>(R.id.icon_home)
@@ -84,7 +89,46 @@ class CarVitalsActivity : AppCompatActivity() {
             val intent = Intent(this, SettingsActivity::class.java)
             startActivity(intent)
         }
+
+        updateTime()
+        timeUpdateHandler.postDelayed(timeUpdateRunnable, 60000)
     }
+
+    private fun hideSystemBars() {
+        if (packageManager.hasSystemFeature("android.hardware.type.automotive")) {
+            window.decorView.systemUiVisibility = (
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                            or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                            or View.SYSTEM_UI_FLAG_FULLSCREEN
+                            or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    )
+        }
+    }
+
+    private fun updateTime() {
+        try {
+            val currentTime = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date())
+            Log.d("TimeUpdate", "Current time: $currentTime")
+            timeTextView.text = currentTime
+        } catch (e: Exception) {
+            Log.e("TimeUpdate", "Error updating time", e)
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        timeUpdateHandler.removeCallbacks(timeUpdateRunnable) // Clean up
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus && packageManager.hasSystemFeature("android.hardware.type.automotive")) {
+            hideSystemBars()
+        }
+    }
+
     private fun setLedState(state: Boolean) {
         val value = if (state) 1 else 0
         try {
@@ -101,41 +145,12 @@ class CarVitalsActivity : AppCompatActivity() {
             Log.e("LED", "Failed to set LED state", e)
         }
     }
+
     private fun updateLightIcon(state: Boolean) {
         if (state) {
-            lightIcon.setImageResource(R.drawable.ic_led_off)
+            lightIcon.setImageResource(R.drawable.light_on)
         } else {
-            lightIcon.setImageResource(R.drawable.ic_led_on)
-        }
-    }
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) {
-            hideSystemBars()
-
-        }
-    }
-
-    private fun updateTime() {
-        try {
-            val currentTime = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date())
-            Log.d("TimeUpdate", "Current time: $currentTime")
-            timeTextView.text = currentTime
-        } catch (e: Exception) {
-            Log.e("TimeUpdate", "Error updating time", e)
-        }
-    }
-
-    private fun hideSystemBars() {
-        if (packageManager.hasSystemFeature("android.hardware.type.automotive")) {
-            window.decorView.systemUiVisibility = (
-                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                            or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                            or View.SYSTEM_UI_FLAG_FULLSCREEN
-                            or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                    )
+            lightIcon.setImageResource(R.drawable.light_off)
         }
     }
 

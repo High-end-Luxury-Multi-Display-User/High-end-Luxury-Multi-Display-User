@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-06-30T19:39:16.376908294Z">
+        <DropdownSelection timestamp="2025-07-01T08:35:14.928773746Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=/home/mariam/.android/avd/Automotive_1408p_landscape_with_Google_Play.avd" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=/home/mariam/.android/avd/LCD_Display.avd" />
             </handle>
           </Target>
         </DropdownSelection>

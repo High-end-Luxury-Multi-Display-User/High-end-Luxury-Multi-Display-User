@@ -33,7 +33,6 @@
                 app:sv_speedTextSize="32sp"
                 app:sv_startDegree="143"
                 app:sv_endDegree="397"
-
                 app:sv_speedTextColor="@color/speed_text_color"
                 app:sv_backgroundCircleColor="@color/background_circle_color"
                 app:sv_speedometerColor="@color/luxoft_purple"
@@ -60,7 +59,7 @@
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="color/triangles_color">
+            android:background="@color/triangles_color">
 
             <!-- Fallback image while video loads -->
             <ImageView

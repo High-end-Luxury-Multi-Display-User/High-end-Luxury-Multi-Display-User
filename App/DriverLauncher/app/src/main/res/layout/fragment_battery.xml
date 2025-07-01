@@ -37,15 +37,15 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="75%"
-                android:textSize="16sp"
+                android:textSize="26sp"
                 android:textStyle="bold"
                 android:textColor="#FFFFFF"
                 android:layout_centerInParent="true" />
 
             <ImageView
                 android:id="@+id/icon_power"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
                 android:layout_below="@id/rangeText"
                 android:layout_centerHorizontal="true"
                 android:layout_marginTop="2dp"
@@ -80,14 +80,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Remaining"
-                    android:textSize="12sp" />
+                    android:textSize="22sp" />
 
                 <TextView
                     android:id="@+id/text_battery"
                     style="@style/MetricValue"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textSize="12sp" />
+                    android:textSize="20sp" />
             </LinearLayout>
 
             <!-- Consumption -->
@@ -105,14 +105,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="CONSUMPTION"
-                    android:textSize="12sp" />
+                    android:textSize="22sp" />
 
                 <TextView
                     android:id="@+id/text_consumption"
                     style="@style/MetricValue"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textSize="12sp" />
+                    android:textSize="20sp" />
             </LinearLayout>
 
             <!-- Next Charger -->
@@ -130,14 +130,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="NEXT CHARGER"
-                    android:textSize="12sp" />
+                    android:textSize="22sp" />
 
                 <TextView
                     android:id="@+id/text_charger"
                     style="@style/MetricValue"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textSize="12sp" />
+                    android:textSize="20sp" />
             </LinearLayout>
 
             <!-- Efficiency -->
@@ -155,14 +155,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="EFFICIENCY"
-                    android:textSize="12sp" />
+                    android:textSize="22sp" />
 
                 <TextView
                     android:id="@+id/text_efficiency"
                     style="@style/MetricValue"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textSize="12sp" />
+                    android:textSize="20sp" />
             </LinearLayout>
         </GridLayout>
     </LinearLayout>

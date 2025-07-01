@@ -103,6 +103,7 @@
             android:id="@+id/batteryContainer"
             android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_margin="5dp"
             android:layout_weight="1" />
 
         <!-- Main Center Fragment -->
@@ -110,6 +111,7 @@
             android:id="@+id/mainFragmentContainer"
             android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_margin="5dp"
             android:layout_weight="1" />
 
         <!-- Right Fragment -->
@@ -117,6 +119,7 @@
             android:id="@+id/rightFragmentContainer"
             android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_margin="5dp"
             android:layout_weight="1" />
         <!-- Right bar -->
         <LinearLayout
@@ -228,11 +231,10 @@
 
             <ImageView
                 android:id="@+id/light_icon"
-                android:layout_width="35dp"
-                android:layout_height="35dp"
+                android:layout_width="37dp"
+                android:layout_height="37dp"
                 android:contentDescription="Light"
-                android:src="@drawable/ic_led_off"
-                app:tint="#a47cc4" />
+                android:src="@drawable/light_off" />
         </LinearLayout>
 
         <LinearLayout

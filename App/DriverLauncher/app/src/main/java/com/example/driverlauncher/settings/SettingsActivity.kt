@@ -79,11 +79,17 @@ class SettingsActivity : AppCompatActivity() {
         themeContainer.setOnClickListener {
             toggleImage(themeImage, R.drawable.day, R.drawable.night)
         }
+        themeImage.setOnClickListener {
+            toggleImage(themeImage, R.drawable.day, R.drawable.night)
+        }
 
         // Gesture Control Switch
         val gestureContainer = findViewById<LinearLayout>(R.id.gesture_container)
         val gestureImage = findViewById<ImageButton>(R.id.gesture_image)
         gestureContainer.setOnClickListener {
+            toggleImage(gestureImage, R.drawable.gesture, R.drawable.no_gesture)
+        }
+        gestureImage.setOnClickListener {
             toggleImage(gestureImage, R.drawable.gesture, R.drawable.no_gesture)
         }
 
@@ -93,11 +99,17 @@ class SettingsActivity : AppCompatActivity() {
         voiceContainer.setOnClickListener {
             toggleImage(voiceImage, R.drawable.voice, R.drawable.no_voice)
         }
+        voiceImage.setOnClickListener {
+            toggleImage(voiceImage, R.drawable.voice, R.drawable.no_voice)
+        }
 
         // Language Switch
         val languageContainer = findViewById<LinearLayout>(R.id.language_container)
         val languageImage = findViewById<ImageButton>(R.id.language_image)
         languageContainer.setOnClickListener {
+            toggleImage(languageImage, R.drawable.english, R.drawable.arabic)
+        }
+        languageImage.setOnClickListener {
             toggleImage(languageImage, R.drawable.english, R.drawable.arabic)
         }
 
@@ -169,9 +181,9 @@ class SettingsActivity : AppCompatActivity() {
     }
     private fun updateLightIcon(state: Boolean) {
         if (state) {
-            lightIcon.setImageResource(R.drawable.ic_led_off)
+            lightIcon.setImageResource(R.drawable.light_on)
         } else {
-            lightIcon.setImageResource(R.drawable.ic_led_on)
+            lightIcon.setImageResource(R.drawable.light_off)
         }
     }
 }
