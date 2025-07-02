@@ -18,14 +18,16 @@ import com.example.driverlauncher.IGpsService
 import com.example.driverlauncher.R
 import com.github.anastr.speedviewlib.AwesomeSpeedometer
 import java.lang.reflect.Method
-import kotlin.random.Random
+
 class DashboardFragment : Fragment() {
+
     private var gpsService: IGpsService? = null
     private lateinit var speedView: AwesomeSpeedometer
     private lateinit var videoView: VideoView
     private lateinit var fallbackImage: ImageView
     private val handler = Handler(Looper.getMainLooper())
     private val updateIntervalMs = 1000L
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
