@@ -1,0 +1,30 @@
+android_app {
+    name: "DriverLauncher",
+    srcs: [
+        "java/**/*.kt",
+        "java/**/*.java",
+    ],
+    manifest: "AndroidManifest.xml",
+    resource_dirs: ["res"],
+    static_libs: [
+        "androidx.appcompat_appcompat",
+        "com.google.android.material_material",
+        "androidx.activity_activity",
+        "androidx-constraintlayout_constraintlayout",
+        "SpeedViewLib",
+        "osmdroid_lib",
+        "kotlin-stdlib",
+        "android.car",
+        "com.android.car.internal.dep",
+        "kotlinx-coroutines-android",
+    ],
+    platform_apis: true, 
+    privileged: true,
+    installable: true,
+    overrides : [
+        "Launcher2",
+        "Launcher3",
+        "Launcher3QuickStep",
+        "CarLauncher",
+    ],
+}

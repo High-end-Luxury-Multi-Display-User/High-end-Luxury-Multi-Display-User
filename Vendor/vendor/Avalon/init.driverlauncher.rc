@@ -1,0 +1,7 @@
+service launch_custom_launcher /system/bin/am start -n am start -n com.example.driverlauncher/com.example.driverlauncher.home.HomeActivity --display 0
+    class main
+    user 0
+    oneshot
+    
+on boot_completed 
+    start launch_custom_launcher 

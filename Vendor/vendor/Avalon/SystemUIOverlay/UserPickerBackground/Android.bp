@@ -1,5 +1,5 @@
 android_app {
-    name: "SystemUIStatusBarOnly",
+    name: "UserPickerBackgroundColour",
     resource_dirs: ["res"],
     certificate: "platform",
     platform_apis: true,

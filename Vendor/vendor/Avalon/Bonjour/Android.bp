@@ -1,0 +1,15 @@
+android_app {
+    name: "bonjour",
+    srcs: ["src/**/*.kt"],
+    manifest: "AndroidManifest.xml",
+    resource_dirs: ["res"],
+    static_libs: [
+        "androidx.appcompat_appcompat",
+        "com.google.android.material_material",
+        "androidx.activity_activity",
+        "androidx-constraintlayout_constraintlayout",
+    ],
+    platform_apis: true, 
+    privileged: true,
+    installable: true,
+}

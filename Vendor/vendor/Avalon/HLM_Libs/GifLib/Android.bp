@@ -1,0 +1,6 @@
+android_library_import {
+    name: "android_gif_drawable",
+    aars: ["android-gif-drawable-1.2.22.aar"],
+    sdk_version: "current",
+}
+

@@ -1,8 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.android.systemui.statustoponly">
+          package="com.android.systemui.userpickerbg">
     <overlay
         android:targetPackage="com.android.systemui"
         android:isStatic="true"
-        android:resourcesMap="@xml/car_sysui_overlays"
+	android:priority="1006"
     />
 </manifest>

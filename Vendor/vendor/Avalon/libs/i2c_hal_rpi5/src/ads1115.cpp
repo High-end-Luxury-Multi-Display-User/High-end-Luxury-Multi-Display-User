@@ -1,4 +1,3 @@
-#include "hali2c.h"
 #include <fcntl.h>
 #include <linux/i2c-dev.h>
 #include <stdint.h>
@@ -6,6 +5,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <stdexcept>
+#include "ads1115.hpp"
 
 #define ADS1115_ADDRESS 0x48
 #define ADS1115_CONVERSION_REGISTER 0x00
@@ -81,7 +81,6 @@ int getI2c() {
             "/dev/i2c-1";  
     int file = open_i2c(device, ADS1115_ADDRESS);
     if (file < 0) {
-    	__android_log_print(ANDROID_LOG_INFO, "RPi5_GPIO", "Failed to open /dev/gpiochip0");
     	return 5;
     }
 
