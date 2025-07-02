@@ -4,23 +4,28 @@ import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
+import android.os.IBinder
 import android.os.Looper
+import android.os.RemoteException
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.VideoView
 import androidx.fragment.app.Fragment
+import com.example.driverlauncher.IGpsService
 import com.example.driverlauncher.R
 import com.github.anastr.speedviewlib.AwesomeSpeedometer
+import java.lang.reflect.Method
 import kotlin.random.Random
 class DashboardFragment : Fragment() {
-
+    private var gpsService: IGpsService? = null
     private lateinit var speedView: AwesomeSpeedometer
     private lateinit var videoView: VideoView
     private lateinit var fallbackImage: ImageView
     private val handler = Handler(Looper.getMainLooper())
-
+    private val updateIntervalMs = 1000L
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -34,18 +39,49 @@ class DashboardFragment : Fragment() {
         fallbackImage.visibility = View.VISIBLE
 
         setupVideo()
-
-        // Start dashboard updates
-        handler.post(object : Runnable {
-            override fun run() {
-                updateDashboard()
-                handler.postDelayed(this, 2000)
-            }
-        })
+        bindGpsService()
 
         return view
     }
+    private fun bindGpsService() {
+        try {
+            val serviceManagerClass = Class.forName("android.os.ServiceManager")
+            val getServiceMethod: Method = serviceManagerClass.getMethod("getService", String::class.java)
+            val result = getServiceMethod.invoke(null, "com.example.driverlauncher.IGpsService/default")
 
+            if (result != null) {
+                val binder = result as IBinder
+                gpsService = IGpsService.Stub.asInterface(binder)
+                Log.d("ServiceBinding", "✅ Bound to IGpsService.")
+                startAutoUpdate()
+            } else {
+                Log.e("ServiceBinding", "❌ Failed to get service binder.")
+            }
+
+        } catch (e: Exception) {
+            Log.e("ServiceBinding", "❌ Error binding service: ${e.message}", e)
+        }
+    }
+
+    private fun startAutoUpdate() {
+        handler.post(updateTask)
+    }
+    private val updateTask = object : Runnable {
+        override fun run() {
+            try {
+                gpsService?.let {
+                    val speed = it.speed
+                    updateDashboard(speed)
+                    Log.d("GPS-SPEED","The Speed got $speed")
+                } ?: Log.w("GPS-UPDATE", "gpsService is null")
+            } catch (e: RemoteException) {
+
+                Log.e("GPS-UPDATE", "RemoteException: ${e.message}", e)
+            }
+
+            handler.postDelayed(this, updateIntervalMs)
+        }
+    }
     private fun setupVideo() {
         val videoUri = Uri.parse("android.resource://${requireContext().packageName}/${R.raw.nav_car_night}")
 
@@ -77,8 +113,7 @@ class DashboardFragment : Fragment() {
         videoView.stopPlayback()
     }
 
-    private fun updateDashboard() {
-        val speed = Random.nextInt(0, 121).toFloat()
+    private fun updateDashboard(speed : Float) {
         speedView.speedTo(speed, 1000)
     }
 }
