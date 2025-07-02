@@ -22,6 +22,7 @@ import java.lang.reflect.Method
 class DashboardFragment : Fragment() {
 
     private var gpsService: IGpsService? = null
+    private var lastSpeed: Float? = null
     private lateinit var speedView: AwesomeSpeedometer
     private lateinit var videoView: VideoView
     private lateinit var fallbackImage: ImageView
@@ -92,6 +93,7 @@ class DashboardFragment : Fragment() {
             mp.isLooping = true
             fallbackImage.visibility = View.GONE // Hide fallback when video is ready
             videoView.start()
+            videoView.pause()
         }
 
         videoView.setOnErrorListener { _, _, _ -> false }
@@ -100,13 +102,13 @@ class DashboardFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         fallbackImage.visibility = View.VISIBLE // Show image immediately
-        videoView.resume()
-        videoView.start()
+//        videoView.resume()
+//        videoView.start()
     }
 
     override fun onPause() {
         super.onPause()
-        videoView.pause()
+//        videoView.pause()
     }
 
     override fun onDestroyView() {
@@ -115,7 +117,24 @@ class DashboardFragment : Fragment() {
         videoView.stopPlayback()
     }
 
-    private fun updateDashboard(speed : Float) {
+    private fun updateDashboard(speed: Float) {
         speedView.speedTo(speed, 1000)
+
+        lastSpeed?.let { previous ->
+            val delta = kotlin.math.abs(speed - previous)
+            if (delta <= 5f) {
+                if (videoView.isPlaying) {
+                    videoView.pause()
+                    Log.d("VIDEO", "Paused video because speed change Δ=$delta km/h")
+                }
+            } else {
+                if (!videoView.isPlaying) {
+                    videoView.start()
+                    Log.d("VIDEO", "Started video because speed change Δ=$delta km/h")
+                }
+            }
+        }
+        lastSpeed = speed
     }
+
 }

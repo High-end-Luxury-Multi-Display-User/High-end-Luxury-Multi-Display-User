@@ -22,7 +22,7 @@ class NavigationFragment : Fragment() {
     private var gpsService: IGpsService? = null
     private lateinit var mapView: MapView
     private val handler = Handler(Looper.getMainLooper())
-    private val updateIntervalMs = 10000L
+    private val updateIntervalMs = 1000L
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Configuration.getInstance().load(requireContext(), requireActivity().getPreferences(0))
