@@ -1,7 +1,7 @@
 diff --git a/service/src/com/android/car/hal/fakevhal/FakeVhalConfigParser.java b/service/src/com/android/car/hal/fakevhal/FakeVhalConfigParser.java
 old mode 100644
 new mode 100755
-index 1acc965..c3f1548
+index 1acc965..be1bb8b
 --- a/service/src/com/android/car/hal/fakevhal/FakeVhalConfigParser.java
 +++ b/service/src/com/android/car/hal/fakevhal/FakeVhalConfigParser.java
 @@ -208,7 +208,23 @@ public final class FakeVhalConfigParser {
@@ -25,7 +25,7 @@ index 1acc965..c3f1548
 +            Map.entry("VENDOR_EXTENSION_ENGINE_STATUS_PROPERTY",
 +                    TestVendorProperty.VENDOR_EXTENSION_FRight_Door_PROPERTY), 
 +            Map.entry("VENDOR_EXTENSION_FUEL_STATUS_PROPERTY",
-+                    TestVendorProperty.VENDOR_EXTENSION_RRight_Door_PROPERTY) 
++                    TestVendorProperty.VENDOR_EXTENSION_RRight_Door_PROPERTY)  
      );
  
      /**
