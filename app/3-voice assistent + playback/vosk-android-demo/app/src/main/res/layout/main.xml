@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Mic Icon -->
+    <ImageView
+        android:id="@+id/mic_icon"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_gravity="center"
+        android:src="@drawable/ic_mic_off"
+        android:contentDescription="Mic icon" />
+
+    <!-- Status Icon for Commands -->
+    <ImageView
+        android:id="@+id/statusImage"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="32dp"
+        android:src="@drawable/icon"
+        android:contentDescription="Status icon" />
+</FrameLayout>
