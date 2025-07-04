@@ -9,7 +9,8 @@ android {
 
     defaultConfig {
         applicationId = "com.example.driverlauncher"
-        minSdk = 34
+        minSdk = 33
+        //noinspection OldTargetApi
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -58,4 +59,7 @@ dependencies {
     implementation("pl.droidsonroids.gif:android-gif-drawable:1.2.22")
     // for car vitals
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3" )
+    // vosk
+    implementation("net.java.dev.jna:jna:5.13.0@aar")
+    implementation("com.alphacephei:vosk-android:0.3.47@aar")
 }

@@ -47,23 +47,23 @@ class DashboardFragment : Fragment() {
         return view
     }
     private fun bindGpsService() {
-        try {
-            val serviceManagerClass = Class.forName("android.os.ServiceManager")
-            val getServiceMethod: Method = serviceManagerClass.getMethod("getService", String::class.java)
-            val result = getServiceMethod.invoke(null, "com.example.driverlauncher.IGpsService/default")
-
-            if (result != null) {
-                val binder = result as IBinder
-                gpsService = IGpsService.Stub.asInterface(binder)
-                Log.d("ServiceBinding", "✅ Bound to IGpsService.")
-                startAutoUpdate()
-            } else {
-                Log.e("ServiceBinding", "❌ Failed to get service binder.")
-            }
-
-        } catch (e: Exception) {
-            Log.e("ServiceBinding", "❌ Error binding service: ${e.message}", e)
-        }
+//        try {
+//            val serviceManagerClass = Class.forName("android.os.ServiceManager")
+//            val getServiceMethod: Method = serviceManagerClass.getMethod("getService", String::class.java)
+//            val result = getServiceMethod.invoke(null, "com.example.driverlauncher.IGpsService/default")
+//
+//            if (result != null) {
+//                val binder = result as IBinder
+//                gpsService = IGpsService.Stub.asInterface(binder)
+//                Log.d("ServiceBinding", "✅ Bound to IGpsService.")
+//                startAutoUpdate()
+//            } else {
+//                Log.e("ServiceBinding", "❌ Failed to get service binder.")
+//            }
+//
+//        } catch (e: Exception) {
+//            Log.e("ServiceBinding", "❌ Error binding service: ${e.message}", e)
+//        }
     }
 
     private fun startAutoUpdate() {
