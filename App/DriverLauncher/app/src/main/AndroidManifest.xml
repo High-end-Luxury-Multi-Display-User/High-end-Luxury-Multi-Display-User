@@ -34,9 +34,6 @@
             android:exported="false" />
         <activity
             android:name=".home.HomeActivity"
-            android:exported="false" />
-        <activity
-            android:name=".voskva.VoskActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
