@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.driverlauncher"
-        minSdk = 34
+        minSdk = 31
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -19,6 +19,7 @@ android {
     }
     buildFeatures{
         aidl=true
+        mlModelBinding = true
     }
 
     buildTypes {
@@ -54,8 +55,18 @@ dependencies {
     implementation("androidx.fragment:fragment-ktx:1.7.0") // For fragment-based split-screen
     implementation("org.osmdroid:osmdroid-android:6.1.18")
     implementation("com.github.anastr:speedviewlib:1.6.1")
-    implementation("com.airbnb.android:lottie:6.4.0")
+//    implementation("com.airbnb.android:lottie:6.4.0")
     implementation("pl.droidsonroids.gif:android-gif-drawable:1.2.22")
-    // for car vitals
-    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3" )
+    // camera
+    implementation ("androidx.camera:camera-camera2:1.4.2")
+    implementation ("androidx.camera:camera-lifecycle:1.2.0")
+    implementation ("androidx.camera:camera-view:1.2.0")
+
+    implementation ("org.tensorflow:tensorflow-lite-support:0.4.3")
+    implementation ("org.tensorflow:tensorflow-lite-metadata:0.2.0")
+
+    //Coroutine
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2")
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.0")
+    implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
 }

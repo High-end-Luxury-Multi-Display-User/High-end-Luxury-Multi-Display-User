@@ -65,8 +65,7 @@
                 android:id="@+id/background_image"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:scaleType="centerCrop"
-                android:src="@drawable/nav_car_night" />
+                android:scaleType="centerCrop"/>
 
             <VideoView
                 android:id="@+id/background_video"
