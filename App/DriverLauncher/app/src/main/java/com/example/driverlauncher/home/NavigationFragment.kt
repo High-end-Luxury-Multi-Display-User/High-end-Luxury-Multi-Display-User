@@ -46,7 +46,7 @@ class NavigationFragment : Fragment() {
         val startPoint = GeoPoint(30.0444, 31.2357) // initial location
         carMarker = Marker(mapView)
         carMarker.position = startPoint
-        carMarker.icon = resources.getDrawable(R.drawable.map_car32, null) // use your car drawable
+        carMarker.icon = resources.getDrawable(R.drawable.map_car64, null) // use your car drawable
         carMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
         carMarker.title = "My Car"
         mapView.overlays.add(carMarker)
@@ -76,14 +76,14 @@ class NavigationFragment : Fragment() {
             if (result != null) {
                 val binder = result as IBinder
                 gpsService = IGpsService.Stub.asInterface(binder)
-                Log.d("ServiceBinding", "✅ Bound to IGpsService.")
+                Log.d("ServiceBinding", "Bound to IGpsService.")
                 startAutoUpdate()
             } else {
-                Log.e("ServiceBinding", "❌ Failed to get service binder.")
+                Log.e("ServiceBinding", "Failed to get service binder.")
             }
 
         } catch (e: Exception) {
-            Log.e("ServiceBinding", "❌ Error binding service: ${e.message}", e)
+            Log.e("ServiceBinding", "Error binding service: ${e.message}", e)
         }
     }
 

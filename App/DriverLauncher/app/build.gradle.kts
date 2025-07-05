@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.driverlauncher"
-        minSdk = 33
+        minSdk = 29
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -55,8 +55,6 @@ dependencies {
     implementation("androidx.fragment:fragment-ktx:1.7.0") // For fragment-based split-screen
     implementation("org.osmdroid:osmdroid-android:6.1.18")
     implementation("com.github.anastr:speedviewlib:1.6.1")
-//    implementation("com.airbnb.android:lottie:6.4.0")
-    implementation("pl.droidsonroids.gif:android-gif-drawable:1.2.22")
     // camera
     implementation ("androidx.camera:camera-camera2:1.4.2")
     implementation ("androidx.camera:camera-lifecycle:1.2.0")
