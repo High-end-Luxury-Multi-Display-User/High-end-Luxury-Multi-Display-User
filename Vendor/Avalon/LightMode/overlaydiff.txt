@@ -1,0 +1,244 @@
+Only in DriverLauncherV0/app/src/main/res/drawable: b_background.xml
+diff -ru DriverLauncher/app/src/main/res/drawable/bg_whole_background.xml DriverLauncherV0/app/src/main/res/drawable/bg_whole_background.xml
+--- DriverLauncher/app/src/main/res/drawable/bg_whole_background.xml	2025-07-05 20:26:03.811317000 +0300
++++ DriverLauncherV0/app/src/main/res/drawable/bg_whole_background.xml	2025-07-05 20:25:02.576259073 +0300
+@@ -1,13 +1,12 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<shape xmlns:android="http://schemas.android.com/apk/res/android">
++<shape xmlns:android="http://schemas.android.com/apk/res/android"
++    android:shape="rectangle">
++
+     <gradient
+-        android:startColor="#2A1A3D"
+-        android:endColor="#5A2E8D"
+-        android:angle="270" />
+-    <stroke
+-        android:width="4dp"
+-        android:color="#FF000000" />
++        android:startColor="#000000"
++        android:centerColor="#222222"
++        android:endColor="#000000"
++        android:angle="45" />
+ 
+-    <!-- Rounded corners for elegance -->
+-    <corners android:radius="16dp" />
++    <corners
++        android:radius="40dp" />
+ </shape>
+\ No newline at end of file
+Only in DriverLauncher/app/src/main/res/drawable: map_car16.png
+Only in DriverLauncher/app/src/main/res/drawable: map_car24.png
+Only in DriverLauncher/app/src/main/res/drawable: map_car32.png
+Only in DriverLauncher/app/src/main/res/drawable: map_car64.png
+Only in DriverLauncher/app/src/main/res/drawable: map_car.png
+Only in DriverLauncherV0/app/src/main/res/drawable: nav_car_day_img.png
+Only in DriverLauncher/app/src/main/res/drawable: nav_car_day.png
+diff -ru DriverLauncher/app/src/main/res/layout/activity_car_vitals.xml DriverLauncherV0/app/src/main/res/layout/activity_car_vitals.xml
+--- DriverLauncher/app/src/main/res/layout/activity_car_vitals.xml	2025-07-05 20:26:03.818317000 +0300
++++ DriverLauncherV0/app/src/main/res/layout/activity_car_vitals.xml	2025-07-05 20:25:02.584259081 +0300
+@@ -3,7 +3,7 @@
+     xmlns:app="http://schemas.android.com/apk/res-auto"
+     android:layout_width="match_parent"
+     android:layout_height="match_parent"
+-    android:background="@color/black">
++    android:background="@drawable/b_background">
+     <!-- Top Control Bar -->
+     <LinearLayout
+         android:id="@+id/top_bar"
+@@ -45,7 +45,7 @@
+                 android:layout_marginTop="5dp"
+                 android:layout_marginBottom="5dp"
+                 android:gravity="center"
+-                android:textColor="@color/white"
++                android:textColor="@color/time"
+                 android:textSize="24dp" />
+ 
+ 
+@@ -80,7 +80,7 @@
+                 android:layout_gravity="center"
+                 android:layout_marginStart="10dp"
+                 android:layout_marginEnd="20dp"
+-                android:textColor="@color/white"
++                android:textColor="@color/time"
+                 android:textSize="24dp" />
+ 
+         </LinearLayout>
+diff -ru DriverLauncher/app/src/main/res/layout/activity_home.xml DriverLauncherV0/app/src/main/res/layout/activity_home.xml
+--- DriverLauncher/app/src/main/res/layout/activity_home.xml	2025-07-05 20:26:03.818317000 +0300
++++ DriverLauncherV0/app/src/main/res/layout/activity_home.xml	2025-07-05 20:25:02.584259081 +0300
+@@ -4,7 +4,8 @@
+     xmlns:app="http://schemas.android.com/apk/res-auto"
+     android:id="@+id/root_layout"
+     android:layout_width="match_parent"
+-    android:layout_height="match_parent">
++    android:layout_height="match_parent"
++    android:background="@drawable/b_background">
+     <!-- Top Control Bar -->
+     <LinearLayout
+         android:id="@+id/top_bar"
+@@ -41,7 +42,7 @@
+                 android:layout_marginStart="5dp"
+                 android:layout_marginTop="5dp"
+                 android:layout_marginBottom="5dp"
+-                android:textColor="@color/white"
++                android:textColor="@color/time"
+                 android:layout_gravity="center"
+                 android:gravity="center"
+                 android:textSize="24dp"
+@@ -76,7 +77,7 @@
+                 android:layout_width="match_parent"
+                 android:layout_marginEnd="20dp"
+                 android:layout_marginStart="10dp"
+-                android:textColor="@color/white"
++                android:textColor="@color/time"
+                 android:textSize="24dp"
+                 android:layout_height="40dp"/>
+ 
+Only in DriverLauncher/app/src/main/res/layout: activity_main.xml
+diff -ru DriverLauncher/app/src/main/res/layout/activity_settings.xml DriverLauncherV0/app/src/main/res/layout/activity_settings.xml
+--- DriverLauncher/app/src/main/res/layout/activity_settings.xml	2025-07-05 20:26:03.818317000 +0300
++++ DriverLauncherV0/app/src/main/res/layout/activity_settings.xml	2025-07-05 20:25:02.584259081 +0300
+@@ -4,7 +4,8 @@
+     xmlns:app="http://schemas.android.com/apk/res-auto"
+     android:id="@+id/root_layout"
+     android:layout_width="match_parent"
+-    android:layout_height="match_parent">
++    android:layout_height="match_parent"
++    android:background="@drawable/b_background">
+     <!-- Top Control Bar -->
+     <LinearLayout
+         android:id="@+id/top_bar"
+@@ -41,7 +42,7 @@
+                 android:layout_marginStart="5dp"
+                 android:layout_marginTop="5dp"
+                 android:layout_marginBottom="5dp"
+-                android:textColor="@color/white"
++                android:textColor="@color/time"
+                 android:layout_gravity="center"
+                 android:gravity="center"
+                 android:textSize="24dp"
+@@ -76,7 +77,7 @@
+                 android:layout_width="match_parent"
+                 android:layout_marginEnd="20dp"
+                 android:layout_marginStart="10dp"
+-                android:textColor="@color/white"
++                android:textColor="@color/time"
+                 android:textSize="24dp"
+                 android:layout_height="40dp"/>
+ 
+diff -ru DriverLauncher/app/src/main/res/layout/fragment_battery.xml DriverLauncherV0/app/src/main/res/layout/fragment_battery.xml
+--- DriverLauncher/app/src/main/res/layout/fragment_battery.xml	2025-07-05 20:26:03.818317000 +0300
++++ DriverLauncherV0/app/src/main/res/layout/fragment_battery.xml	2025-07-05 20:25:02.584259081 +0300
+@@ -4,7 +4,7 @@
+     android:id="@+id/battery_fragment"
+     android:layout_width="match_parent"
+     android:layout_height="match_parent"
+-    android:background="@drawable/black_background">
++    android:background="@drawable/bg_whole_background">
+ 
+     <LinearLayout
+         android:id="@+id/battery_root"
+diff -ru DriverLauncher/app/src/main/res/layout/fragment_car_vitals.xml DriverLauncherV0/app/src/main/res/layout/fragment_car_vitals.xml
+--- DriverLauncher/app/src/main/res/layout/fragment_car_vitals.xml	2025-07-05 20:26:03.819317000 +0300
++++ DriverLauncherV0/app/src/main/res/layout/fragment_car_vitals.xml	2025-07-05 20:25:02.584259081 +0300
+@@ -4,7 +4,7 @@
+     android:id="@+id/mainStackContainer"
+     android:layout_width="match_parent"
+     android:layout_height="match_parent"
+-    android:background="@drawable/black_background"
++    android:background="@drawable/bg_whole_background"
+     android:padding="16dp">
+ 
+     <!-- Example stacked images -->
+diff -ru DriverLauncher/app/src/main/res/layout/fragment_dashboard.xml DriverLauncherV0/app/src/main/res/layout/fragment_dashboard.xml
+--- DriverLauncher/app/src/main/res/layout/fragment_dashboard.xml	2025-07-05 20:26:03.819317000 +0300
++++ DriverLauncherV0/app/src/main/res/layout/fragment_dashboard.xml	2025-07-05 20:25:02.584259081 +0300
+@@ -14,7 +14,7 @@
+         android:layout_weight="1"
+         app:cardCornerRadius="26dp"
+         app:cardElevation="4dp"
+-        app:cardBackgroundColor="#000000"
++        app:cardBackgroundColor="@color/triangles_color"
+         android:layout_marginBottom="8dp">
+ 
+         <FrameLayout
+@@ -33,11 +33,11 @@
+                 app:sv_speedTextSize="32sp"
+                 app:sv_startDegree="143"
+                 app:sv_endDegree="397"
+-                app:sv_speedTextColor="#FFFFFF"
+-                app:sv_backgroundCircleColor="#000000"
++                app:sv_speedTextColor="@color/speed_text_color"
++                app:sv_backgroundCircleColor="@color/background_circle_color"
+                 app:sv_speedometerColor="@color/luxoft_purple"
+                 app:sv_indicatorColor="@color/luxoft_purple"
+-                app:sv_trianglesColor="#000000"
++                app:sv_trianglesColor="@color/triangles_color"
+                 app:sv_withTremble="false" />
+ 
+             <ImageView
+@@ -58,14 +58,16 @@
+ 
+         <FrameLayout
+             android:layout_width="match_parent"
+-            android:layout_height="match_parent">
++            android:layout_height="match_parent"
++            android:background="@color/triangles_color">
+ 
+             <!-- Fallback image while video loads -->
+             <ImageView
+                 android:id="@+id/background_image"
+                 android:layout_width="match_parent"
+                 android:layout_height="match_parent"
+-                android:scaleType="centerCrop"/>
++                android:scaleType="centerCrop"
++                android:src="@drawable/nav_car_night" />
+ 
+             <VideoView
+                 android:id="@+id/background_video"
+@@ -75,4 +77,4 @@
+         </FrameLayout>
+     </androidx.cardview.widget.CardView>
+ 
+-</LinearLayout>
++</LinearLayout>
+\ No newline at end of file
+Only in DriverLauncher/app/src/main/res/layout: fragment_settings.xml
+Only in DriverLauncher/app/src/main/res/raw: day.mp3
+Only in DriverLauncher/app/src/main/res/raw: greet.mp3
+Only in DriverLauncher/app/src/main/res/raw: lightoff.mp3
+Only in DriverLauncher/app/src/main/res/raw: lighton.mp3
+Only in DriverLauncher/app/src/main/res/raw: night.mp3
+Only in DriverLauncher/app/src/main/res/raw: seatdefault.mp3
+Only in DriverLauncher/app/src/main/res/raw: seatmax.mp3
+Only in DriverLauncher/app/src/main/res/raw: seat.mp3
+diff -ru DriverLauncher/app/src/main/res/values/colors.xml DriverLauncherV0/app/src/main/res/values/colors.xml
+--- DriverLauncher/app/src/main/res/values/colors.xml	2025-07-05 20:26:03.822317000 +0300
++++ DriverLauncherV0/app/src/main/res/values/colors.xml	2025-07-05 20:25:02.585259082 +0300
+@@ -8,4 +8,15 @@
+     <color name="light_gray">#e0dce3</color>
+     <color name="icons_colors">#a47cc4</color>
+ 
++
++    <color name="time">#FFFFFFFF</color>
++
++
++
++    <color name="speed_text_color">#FFFFFF</color>
++    <color name="background_circle_color">#000000</color>
++    <color name="triangles_color">#000000</color>
++    <color name="speed_unit_text_color">#A47CC4</color>
++    <color name="speed_marks_color">#333333</color>
++
+ </resources>
+\ No newline at end of file
+diff -ru DriverLauncher/app/src/main/res/values/strings.xml DriverLauncherV0/app/src/main/res/values/strings.xml
+--- DriverLauncher/app/src/main/res/values/strings.xml	2025-07-05 20:26:03.822317000 +0300
++++ DriverLauncherV0/app/src/main/res/values/strings.xml	2025-07-05 20:25:02.585259082 +0300
+@@ -1,5 +1,3 @@
+ <resources>
+     <string name="app_name">DriverLauncher</string>
+-    <!-- TODO: Remove or change this placeholder text -->
+-    <string name="hello_blank_fragment">Hello blank fragment</string>
+ </resources>
+\ No newline at end of file

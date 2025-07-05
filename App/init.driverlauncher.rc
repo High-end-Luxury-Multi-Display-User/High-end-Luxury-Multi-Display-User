@@ -1,5 +1,0 @@
-service launch_custom_launcher /system/bin/am start -n com.example.driverlauncher/com.example.driverlauncher.home.HomeActivity
-    class main
-    user 0
-    oneshot
-   

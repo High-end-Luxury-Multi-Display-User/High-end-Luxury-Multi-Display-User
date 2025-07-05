@@ -8,4 +8,14 @@
     <color name="light_gray">#e0dce3</color>
     <color name="icons_colors">#a47cc4</color>
 
+    <color name="time">#FFFFFFFF</color>
+
+
+
+    <color name="speed_text_color">#FFFFFF</color>
+    <color name="background_circle_color">#000000</color>
+    <color name="triangles_color">#000000</color>
+    <color name="speed_unit_text_color">#A47CC4</color>
+    <color name="speed_marks_color">#333333</color>
+
 </resources>

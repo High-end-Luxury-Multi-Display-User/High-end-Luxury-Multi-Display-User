@@ -1,6 +1,0 @@
-android_library_import {
-    name: "osmdroid_lib",
-    aars: ["osmdroid-android-6.1.18.aar"],
-    sdk_version: "current",
-}
-
