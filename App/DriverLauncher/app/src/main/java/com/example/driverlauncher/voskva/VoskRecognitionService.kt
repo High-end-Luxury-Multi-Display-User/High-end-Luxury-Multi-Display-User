@@ -157,13 +157,13 @@ class VoskRecognitionService : Service(), RecognitionListener {
             Log.d(TAG, "Recognized: $text")
 
             val command = when {
-                matchesPattern(text, greetSynonyms, carSynonyms) -> "greet"
-                matchesPattern(text, seatSynonyms, "default") -> "seat_70"
-                matchesPattern(text, seatSynonyms, maxSynonyms) -> "seat_90"
-                matchesPattern(text, seatSynonyms, minSynonyms) -> "seat_45"
-                matchesPattern(text, lightSynonyms, "on") -> "light_on"
+                matchesPattern(text, greetSynonyms, carSynonyms) -> "arise_avalon"
+                matchesPattern(text, seatSynonyms, neutralSynonyms) -> "seat_neutral"
+                matchesPattern(text, seatSynonyms, frontSynonyms) -> "seat_front"
+                matchesPattern(text, seatSynonyms, backwardSynonyms) -> "seat_backward"
+                matchesPattern(text, lightSynonyms, onSynonyms) -> "light_on"
                 matchesPattern(text, lightSynonyms, offSynonyms) -> "light_off"
-                matchesPattern(text, daySynonyms, modeSynonyms) -> "day_mode"
+                matchesPattern(text, lightSynonyms, modeSynonyms) -> "light_mode"
                 matchesPattern(text, nightSynonyms, modeSynonyms) -> "night_mode"
                 else -> null
             }
@@ -188,24 +188,23 @@ class VoskRecognitionService : Service(), RecognitionListener {
     }
 
     // Command synonym lists
-    private val greetSynonyms = arrayOf("hi", "hey", "high", "hello", "hail")
-    private val carSynonyms = arrayOf("car", "call", "court", "assistant", "vehicle", "system", "core")
-    private val lightSynonyms = arrayOf("light", "lite", "like", "lamp", "bulb", "glow")
+    private val greetSynonyms = arrayOf("hi", "hey", "high", "hello", "hail", "greet", "greeting", "greetings", "greets", "grits", "grating", "greening", "greets")
+    private val carSynonyms = arrayOf("avalon", "avelon", "avalan", "avelon", "avila", "avalanche", "avelone", "avelawn")
+    private val lightSynonyms = arrayOf("light", "lite", "like", "lamp", "bulb", "glow", "lights")
     private val modeSynonyms = arrayOf("mode", "mood", "move", "moved", "setting", "style", "moon")
-    private val maxSynonyms = arrayOf("maximum", "max", "full")
-    private val minSynonyms = arrayOf("minimum", "min", "meme", "low", "small")
-    private val daySynonyms = arrayOf("day", "they", "the")
-    private val nightSynonyms = arrayOf("night", "nine")
-    private val seatSynonyms = arrayOf("seat", "seek", "see", "the")
+    private val neutralSynonyms = arrayOf("neutral", "nutral", "nutral", "nuclear", "newtral", "nuture", "neuter", "newtral", "neutril", "neutrol", "nutral", "neutal", "default")
+    private val frontSynonyms = arrayOf("front", "fron", "frount", "froont", "frant", "furnt", "frount", "frunt", "fraint", "frant", "frunn", "forward")
+    private val backwardSynonyms = arrayOf("backward", "backwards", "back", "bakward", "backword", "bakkward", "bakward", "baxward", "bakkword", "baskward")
+    private val nightSynonyms = arrayOf("night", "nine", "nights")
+    private val seatSynonyms = arrayOf("seat", "seek", "see", "seeks", "seeds", "sees", "seed", "seats")
+    private val onSynonyms = arrayOf("on", "awn", "one", "hon", "ahn", "omn", "awn", "un", "own", "won")
     private val offSynonyms = arrayOf("off", "of", "oh")
 
-    // RecognitionListener stubs
     override fun onFinalResult(hypothesis: String?) = Unit
     override fun onPartialResult(hypothesis: String?) = Unit
     override fun onError(exception: Exception?) = stopListening()
     override fun onTimeout() = stopListening()
 
-    // Callback interface
     fun interface RecognitionCallback {
         fun onCommandReceived(command: String)
     }

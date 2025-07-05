@@ -42,10 +42,10 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         var isBound = false
         var lastCommand = ""
     }
-    private val VENDOR_EXTENSION_LIGHT_CONTROL_PROPERTY: Int = 0x21400106
-    private val areaID = 0
-    private lateinit var car: Car
-    private lateinit var carPropertyManager: CarPropertyManager
+//    private val VENDOR_EXTENSION_LIGHT_CONTROL_PROPERTY: Int = 0x21400106
+//    private val areaID = 0
+//    private lateinit var car: Car
+//    private lateinit var carPropertyManager: CarPropertyManager
     private var ledState = false // false = off, true = on
     private var currentScreen = Screen.HOME // Track current screen state
 
@@ -97,19 +97,19 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         settingsIcon = findViewById(R.id.icon_settings)
 
         // Initialize Car API
-        car = Car.createCar(this.applicationContext)
-        if (car == null) {
-            Log.e("LED", "Failed to create Car instance")
-        } else {
-            carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
-            Log.d("LED", "CarPropertyManager initialized")
-        }
+//        car = Car.createCar(this.applicationContext)
+//        if (car == null) {
+//            Log.e("LED", "Failed to create Car instance")
+//        } else {
+//            carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
+//            Log.d("LED", "CarPropertyManager initialized")
+//        }
 
         // Set up light button
         val lightButton = findViewById<LinearLayout>(R.id.light_button)
         lightButton.setOnClickListener {
             ledState = !ledState
-            //setLedState(ledState)
+            setLedState(ledState)
             updateLightIcon(ledState)
         }
 
@@ -281,17 +281,20 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     private fun setLedState(state: Boolean) {
         val value = if (state) 1 else 0
         try {
-            synchronized(carPropertyManager) {
-                carPropertyManager.setProperty(
-                    Integer::class.java,
-                    VENDOR_EXTENSION_LIGHT_CONTROL_PROPERTY,
-                    areaID,
-                    Integer(value)
-                )
-                Log.d("LED", "LED state set to: $value")
-            }
+//            synchronized(carPropertyManager) {
+//                carPropertyManager.setProperty(
+//                    Integer::class.java,
+//                    VENDOR_EXTENSION_LIGHT_CONTROL_PROPERTY,
+//                    areaID,
+//                    Integer(value)
+//                )
+//                Log.d("LED", "LED state set to: $value")
+//            }
         } catch (e: Exception) {
             Log.e("LED", "Failed to set LED state", e)
+        }
+        finally {
+            ledState = state
         }
     }
 
@@ -335,19 +338,21 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
 
     private fun handleCommand(command: String) {
         when (command) {
-            "greet" -> {
+            "arise_avalon" -> {
                 Toast.makeText(this, "Hello! How can I assist you?", Toast.LENGTH_SHORT).show()
                 playAudio(R.raw.greet)
             }
             "light_on" -> {
                 updateLightIcon(true)
+                setLedState(true)
                 playAudio(R.raw.lighton)
             }
             "light_off" -> {
                 updateLightIcon(false)
+                setLedState(false)
                 playAudio(R.raw.lightoff)
             }
-            "day_mode" -> {
+            "light_mode" -> {
                 // change to light mode
                 playAudio(R.raw.day)
             }
@@ -355,19 +360,38 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
                 // change to dark mode
                 playAudio(R.raw.night)
             }
-            "seat_45" -> {
+            "seat_front" -> {
                 // adjust seat position 3
-                playAudio(R.raw.seat)
+                adjustSeatPosition(SeatFragment.SeatPosition.REVERSE, R.raw.seatmax)
             }
-            "seat_70" -> {
+            "seat_neutral" -> {
                 // adjust seat position 2
-                playAudio(R.raw.seatdefault)
+                adjustSeatPosition(SeatFragment.SeatPosition.DEFAULT, R.raw.seatdefault)
             }
-            "seat_90" -> {
+            "seat_backward" -> {
                 // adjust seat position 1
-                playAudio(R.raw.seatmax)
+                adjustSeatPosition(SeatFragment.SeatPosition.FORWARD, R.raw.seat)
             }
         }
+    }
+
+    private fun adjustSeatPosition(position: SeatFragment.SeatPosition, soundRes: Int) {
+        if (currentScreen != Screen.CAR_VITALS) {
+            showCarVitalsFragments()
+            updateIconStates()
+            // Wait for fragment to be created
+            Handler(Looper.getMainLooper()).post {
+                getSeatFragment()?.switchTo(position)
+            }
+        } else {
+            // Fragment already exists - update immediately
+            getSeatFragment()?.switchTo(position)
+        }
+        playAudio(soundRes)
+    }
+
+    private fun getSeatFragment(): SeatFragment? {
+        return supportFragmentManager.findFragmentById(R.id.rightFragmentContainer) as? SeatFragment
     }
 
     private fun playAudio(resId: Int) {
@@ -395,16 +419,9 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         }
     }
 
-    private fun updateMicIcon() {
-//        micIcon.setImageResource(
-//            if (isServiceRunning) R.drawable.ic_mic_on else R.drawable.ic_mic_off
-//        )
-    }
-
     private fun startServiceOnlyOnce() {
         startService(Intent(this, VoskRecognitionService::class.java))
         isServiceRunning = true
-        updateMicIcon()
     }
 
     private fun checkPermissions() {
