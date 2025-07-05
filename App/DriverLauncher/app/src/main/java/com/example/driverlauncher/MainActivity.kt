@@ -13,6 +13,7 @@ import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
+import android.media.AudioManager
 import android.media.ImageReader
 import android.media.MediaPlayer
 import android.os.Bundle
@@ -21,37 +22,34 @@ import android.os.HandlerThread
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
-import android.view.TextureView
 import android.view.View
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.example.driverlauncher.voskva.VoskRecognitionService
-import com.example.driverlauncher.handgesture.YuvToRgbConverter
-import java.text.SimpleDateFormat
-import java.util.*
-
-import android.widget.FrameLayout
-import android.widget.Toast
 import com.example.driverlauncher.carvitals.BatteryFragment
 import com.example.driverlauncher.carvitals.CarVitalsFragment
 import com.example.driverlauncher.carvitals.SeatFragment
-import com.example.driverlauncher.handgesture.CameraCaptureService
+import com.example.driverlauncher.handgesture.YuvToRgbConverter
 import com.example.driverlauncher.home.DashboardFragment
 import com.example.driverlauncher.home.NavigationFragment
 import com.example.driverlauncher.ml.ModelMetadata
 import com.example.driverlauncher.settings.SettingsFragment
-import org.tensorflow.lite.support.image.ImageProcessor
+import com.example.driverlauncher.voskva.VoskRecognitionService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.support.image.ops.ResizeOp
+import java.text.SimpleDateFormat
+import java.util.*
 
 class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCallback {
     companion object {
@@ -66,7 +64,6 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     private lateinit var car: Car
     private lateinit var carPropertyManager: CarPropertyManager
     private var ledState = false // false = off, true = on
-
     private lateinit var lightIcon: ImageView
     private lateinit var timeTextView: TextView
     private val timeUpdateHandler = Handler(Looper.getMainLooper())
@@ -74,7 +71,6 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     private lateinit var homeIcon: ImageView
     private lateinit var carVitalsIcon: ImageView
     private lateinit var settingsIcon: ImageView
-
     private lateinit var model: ModelMetadata
     private lateinit var imageProcessor: ImageProcessor
     private val CAMERA_PERMISSION_CODE = 100
@@ -83,7 +79,10 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     private var captureSession: CameraCaptureSession? = null
     private lateinit var backgroundHandler: Handler
     private lateinit var backgroundThread: HandlerThread
-    private val scope = CoroutineScope(Dispatchers.Default)
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private lateinit var audioManager: AudioManager
+    private var lastGestureTime = 0L
+    private val gestureDebounceTime = 500L // 1 second debounce
 
     private var currentScreen = Screen.HOME // Track current screen state
     enum class Screen {
@@ -114,6 +113,8 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         checkPermissions()
         startServiceOnlyOnce()
         /********************************************/
+        // Initialize AudioManager
+        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
         // Initialize views
         lightIcon = findViewById(R.id.light_icon)
@@ -221,11 +222,13 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
             setupCamera()
         }
     }
+
     private fun setupCamera() {
         startBackgroundThread()
         setupImageReader()
         openCamera()
     }
+
     private fun startBackgroundThread() {
         backgroundThread = HandlerThread("CameraBackgroundThread")
         backgroundThread.start()
@@ -248,10 +251,38 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
                     if (detectionResult.isNotEmpty()) {
                         val bestResult = detectionResult.maxByOrNull { it.score }
                         bestResult?.let {
-                            if (it.score > 0.7f) {
-                                Log.i("Gesture", "Label: ${it.label}")
-                                Log.i("Gesture", "DisplayName: ${it.displayName}")
-                                Log.i("Gesture", "Score: ${it.score}")
+                            if (it.score > 0.8f) {
+                                Log.i("Gesture", "Label: ${it.label}, DisplayName: ${it.displayName}, Score: ${it.score}")
+                                val currentTime = System.currentTimeMillis()
+                                if (currentTime - lastGestureTime > gestureDebounceTime) {
+                                    when (it.label) {
+                                        "scrollup" -> {
+                                            audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
+                                            runOnUiThread {
+                                                Toast.makeText(this@MainActivity, "Volume Up", Toast.LENGTH_SHORT).show()
+                                            }
+                                            lastGestureTime = currentTime
+                                        }
+                                        "down" -> {
+                                            audioManager.adjustVolume(AudioManager.ADJUST_MUTE, AudioManager.FLAG_SHOW_UI)
+                                            runOnUiThread {
+                                                Toast.makeText(this@MainActivity, "Volume Down", Toast.LENGTH_SHORT).show()
+                                            }
+                                            lastGestureTime = currentTime
+                                        }
+                                        "up" -> {
+                                            audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
+                                            runOnUiThread {
+                                                Toast.makeText(this@MainActivity, "Volume Up", Toast.LENGTH_SHORT).show()
+                                            }
+                                            lastGestureTime = currentTime
+                                        }
+
+                                        else -> {}
+                                    }
+                                } else {
+
+                                }
                             } else {
                                 Log.i("Gesture", "No gesture confident enough (max score: ${it.score})")
                             }
@@ -304,7 +335,6 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
             }
         }, backgroundHandler)
     }
-
 
     private fun showHomeFragments() {
         supportFragmentManager.beginTransaction()
@@ -372,7 +402,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 100 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        if (requestCode == CAMERA_PERMISSION_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             setupCamera()
         }
     }
@@ -519,9 +549,9 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     }
 
     private fun updateMicIcon() {
-//        micIcon.setImageResource(
-//            if (isServiceRunning) R.drawable.ic_mic_on else R.drawable.ic_mic_off
-//        )
+        // micIcon.setImageResource(
+        //     if (isServiceRunning) R.drawable.ic_mic_on else R.drawable.ic_mic_off
+        // )
     }
 
     private fun startServiceOnlyOnce() {
@@ -539,7 +569,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(Manifest.permission.RECORD_AUDIO),
-                MainActivity.Companion.PERMISSIONS_REQUEST_RECORD_AUDIO
+                PERMISSIONS_REQUEST_RECORD_AUDIO
             )
         }
     }
