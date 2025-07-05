@@ -377,17 +377,22 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         }
     }
 
-    private fun toggleService() {
+    fun toggleService() {
+        isServiceRunning = !isServiceRunning  // Update companion object variable
+
         Intent(this, VoskRecognitionService::class.java).apply {
             action = if (isServiceRunning) {
-                VoskRecognitionService.ACTION_STOP_RECOGNITION
-            } else {
                 VoskRecognitionService.ACTION_START_RECOGNITION
+            } else {
+                VoskRecognitionService.ACTION_STOP_RECOGNITION
             }
             startService(this)
         }
-        isServiceRunning = !isServiceRunning
-        updateMicIcon()
+
+        // Notify SettingsFragment about state change
+        supportFragmentManager.fragments.forEach {
+            if (it is SettingsFragment) it.updateVoiceImage()
+        }
     }
 
     private fun updateMicIcon() {
