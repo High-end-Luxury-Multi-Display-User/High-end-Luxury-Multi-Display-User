@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.driverlauncher"
-        minSdk = 31
+        minSdk = 33
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -69,4 +69,8 @@ dependencies {
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2")
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.0")
     implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
+
+    // vosk
+    implementation("net.java.dev.jna:jna:5.13.0@aar")
+    implementation("com.alphacephei:vosk-android:0.3.47@aar")
 }

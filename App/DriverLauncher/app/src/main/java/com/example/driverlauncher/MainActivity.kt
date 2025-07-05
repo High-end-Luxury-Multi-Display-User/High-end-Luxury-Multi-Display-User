@@ -1,21 +1,31 @@
 package com.example.driverlauncher
-
+import android.Manifest
 import android.car.Car
 import android.car.hardware.property.CarPropertyManager
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
+import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import android.view.View
-import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.driverlauncher.voskva.VoskRecognitionService
+import java.text.SimpleDateFormat
+import java.util.*
+
+import android.widget.FrameLayout
+import android.widget.Toast
 import com.example.driverlauncher.carvitals.BatteryFragment
 import com.example.driverlauncher.carvitals.CarVitalsFragment
 import com.example.driverlauncher.carvitals.SeatFragment
@@ -23,10 +33,15 @@ import com.example.driverlauncher.handgesture.CameraCaptureService
 import com.example.driverlauncher.home.DashboardFragment
 import com.example.driverlauncher.home.NavigationFragment
 import com.example.driverlauncher.settings.SettingsFragment
-import java.text.SimpleDateFormat
-import java.util.*
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCallback {
+    companion object {
+        const val PERMISSIONS_REQUEST_RECORD_AUDIO = 1
+        var isServiceRunning = false
+        var voskService: VoskRecognitionService? = null
+        var isBound = false
+        var lastCommand = ""
+    }
     private val VENDOR_EXTENSION_LIGHT_CONTROL_PROPERTY: Int = 0x21400106
     private val areaID = 0
     private lateinit var car: Car
@@ -46,9 +61,30 @@ class MainActivity : AppCompatActivity() {
         HOME, CAR_VITALS, SETTINGS
     }
 
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(className: ComponentName, service: IBinder) {
+            val binder = service as VoskRecognitionService.LocalBinder
+            voskService = binder.getService().apply {
+                setRecognitionCallback(this@MainActivity)
+            }
+            isBound = true
+        }
+
+        override fun onServiceDisconnected(arg0: ComponentName) {
+            isBound = false
+            voskService = null
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        /*********************************************/
+        // VA shenanigans
+        checkPermissions()
+        startServiceOnlyOnce()
+        /********************************************/
 
         // Initialize views
         lightIcon = findViewById(R.id.light_icon)
@@ -278,5 +314,111 @@ class MainActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString("currentScreen", currentScreen.name)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        bindService(
+            Intent(this, VoskRecognitionService::class.java),
+            serviceConnection,
+            Context.BIND_AUTO_CREATE
+        )
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (isBound) {
+            unbindService(serviceConnection)
+            isBound = false
+        }
+    }
+
+    private fun handleCommand(command: String) {
+        when (command) {
+            "greet" -> {
+                Toast.makeText(this, "Hello! How can I assist you?", Toast.LENGTH_SHORT).show()
+                playAudio(R.raw.greet)
+            }
+            "light_on" -> {
+                updateLightIcon(true)
+                playAudio(R.raw.lighton)
+            }
+            "light_off" -> {
+                updateLightIcon(false)
+                playAudio(R.raw.lightoff)
+            }
+            "day_mode" -> {
+                // change to light mode
+                playAudio(R.raw.day)
+            }
+            "night_mode" -> {
+                // change to dark mode
+                playAudio(R.raw.night)
+            }
+            "seat_45" -> {
+                // adjust seat position 3
+                playAudio(R.raw.seat)
+            }
+            "seat_70" -> {
+                // adjust seat position 2
+                playAudio(R.raw.seatdefault)
+            }
+            "seat_90" -> {
+                // adjust seat position 1
+                playAudio(R.raw.seatmax)
+            }
+        }
+    }
+
+    private fun playAudio(resId: Int) {
+        MediaPlayer.create(this, resId).apply {
+            setOnCompletionListener { mp -> mp.release() }
+            start()
+        }
+    }
+
+    private fun toggleService() {
+        Intent(this, VoskRecognitionService::class.java).apply {
+            action = if (isServiceRunning) {
+                VoskRecognitionService.ACTION_STOP_RECOGNITION
+            } else {
+                VoskRecognitionService.ACTION_START_RECOGNITION
+            }
+            startService(this)
+        }
+        isServiceRunning = !isServiceRunning
+        updateMicIcon()
+    }
+
+    private fun updateMicIcon() {
+//        micIcon.setImageResource(
+//            if (isServiceRunning) R.drawable.ic_mic_on else R.drawable.ic_mic_off
+//        )
+    }
+
+    private fun startServiceOnlyOnce() {
+        startService(Intent(this, VoskRecognitionService::class.java))
+        isServiceRunning = true
+        updateMicIcon()
+    }
+
+    private fun checkPermissions() {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.RECORD_AUDIO
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.RECORD_AUDIO),
+                MainActivity.Companion.PERMISSIONS_REQUEST_RECORD_AUDIO
+            )
+        }
+    }
+
+    override fun onCommandReceived(command: String) {
+        if (command == lastCommand) return
+        lastCommand = command
+        runOnUiThread { handleCommand(command) }
     }
 }
