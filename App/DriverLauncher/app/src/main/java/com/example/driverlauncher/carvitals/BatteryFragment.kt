@@ -15,11 +15,11 @@ import com.example.driverlauncher.R
 
 class BatteryFragment : Fragment(R.layout.fragment_battery) {
 
-    private val VENDOR_EXTENSION_BATTERY_PROPERTY = 0x21400105
-    private val areaId = 0
-
-    private lateinit var car: Car
-    private lateinit var carPropertyManager: CarPropertyManager
+//    private val VENDOR_EXTENSION_BATTERY_PROPERTY = 0x21400105
+//    private val areaId = 0
+//
+//    private lateinit var car: Car
+//    private lateinit var carPropertyManager: CarPropertyManager
 
     private lateinit var circleProgress: ProgressBar
     private lateinit var rangeText: TextView
@@ -34,18 +34,18 @@ class BatteryFragment : Fragment(R.layout.fragment_battery) {
     private val pollRunnable = object : Runnable {
         override fun run() {
             try {
-                val batteryProp = carPropertyManager.getProperty(
-                    Integer::class.java,
-                    VENDOR_EXTENSION_BATTERY_PROPERTY,
-                    areaId
-                )
-
-                if (batteryProp != null) {
-                    val rawPotValue = batteryProp.value.toInt()
-                    val batteryPercent = mapPotToPercentage(rawPotValue)
-                    updateUI(batteryPercent)
-                    Log.d("BatteryFragment", "Raw battery value: $rawPotValue → $batteryPercent%")
-                }
+//                val batteryProp = carPropertyManager.getProperty(
+//                    Integer::class.java,
+//                    VENDOR_EXTENSION_BATTERY_PROPERTY,
+//                    areaId
+//                )
+//
+//                if (batteryProp != null) {
+//                    val rawPotValue = batteryProp.value.toInt()
+//                    val batteryPercent = mapPotToPercentage(rawPotValue)
+//                    updateUI(batteryPercent)
+//                    Log.d("BatteryFragment", "Raw battery value: $rawPotValue → $batteryPercent%")
+//                }
 
             } catch (e: Exception) {
                 Log.e("BatteryFragment", "Polling error", e)
@@ -67,13 +67,13 @@ class BatteryFragment : Fragment(R.layout.fragment_battery) {
         chargerText = view.findViewById(R.id.text_charger)
         efficiencyText = view.findViewById(R.id.text_efficiency)
 
-        try {
-            car = Car.createCar(requireContext().applicationContext)
-            carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
-        } catch (e: Exception) {
-            Log.e("BatteryFragment", "Car manager init failed", e)
-            return view
-        }
+//        try {
+//            car = Car.createCar(requireContext().applicationContext)
+//            carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
+//        } catch (e: Exception) {
+//            Log.e("BatteryFragment", "Car manager init failed", e)
+//            return view
+//        }
 
         handler.post(pollRunnable)
         return view

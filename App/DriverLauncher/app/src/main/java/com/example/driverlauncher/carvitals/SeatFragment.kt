@@ -17,11 +17,16 @@ class SeatFragment : Fragment() {
     private lateinit var backrestReverse: ImageView
     private lateinit var angleText: TextView
 
-    private enum class SeatPosition {
+    enum class SeatPosition {
         DEFAULT, FORWARD, REVERSE
     }
 
     private var currentPosition = SeatPosition.DEFAULT
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        retainInstance = true
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -61,7 +66,7 @@ class SeatFragment : Fragment() {
         }
     }
 
-    private fun switchTo(position: SeatPosition) {
+    fun switchTo(position: SeatPosition) {
         // Hide all
         backrestDefault.visibility = View.GONE
         backrestForward.visibility = View.GONE

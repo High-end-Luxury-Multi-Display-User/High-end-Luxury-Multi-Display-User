@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import androidx.fragment.app.Fragment
+import com.example.driverlauncher.MainActivity
 import com.example.driverlauncher.R
 
 class SettingsFragment : Fragment() {
@@ -44,11 +45,14 @@ class SettingsFragment : Fragment() {
         val voiceContainer = view.findViewById<LinearLayout>(R.id.voice_container)
         val voiceImage = view.findViewById<ImageButton>(R.id.voice_image)
         voiceContainer.setOnClickListener {
-            toggleImage(voiceImage, R.drawable.voice, R.drawable.no_voice)
+            (activity as? MainActivity)?.toggleService()
         }
         voiceImage.setOnClickListener {
-            toggleImage(voiceImage, R.drawable.voice, R.drawable.no_voice)
+            (activity as? MainActivity)?.toggleService()
         }
+
+        // Set initial state
+        updateVoiceImage()
 
         // Language Switch
         val languageContainer = view.findViewById<LinearLayout>(R.id.language_container)
@@ -67,5 +71,17 @@ class SettingsFragment : Fragment() {
         } else {
             imageButton.setImageResource(offResource)
         }
+    }
+
+    fun updateVoiceImage() {
+        val isRunning = MainActivity.isServiceRunning
+        view?.findViewById<ImageButton>(R.id.voice_image)?.setImageResource(
+            if (isRunning) R.drawable.voice else R.drawable.no_voice
+        )
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateVoiceImage()
     }
 }
