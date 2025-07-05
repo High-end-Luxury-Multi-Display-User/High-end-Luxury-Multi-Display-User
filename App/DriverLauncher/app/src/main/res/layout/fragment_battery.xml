@@ -4,7 +4,7 @@
     android:id="@+id/battery_fragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_whole_background">
+    android:background="@drawable/black_background">
 
     <LinearLayout
         android:id="@+id/battery_root"

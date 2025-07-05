@@ -4,10 +4,11 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-07-01T08:35:14.928773746Z">
+        <DropdownSelection timestamp="2025-07-05T15:32:50.346462501Z">
+
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=/home/mariam/.android/avd/LCD_Display.avd" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=R58N515GV0J" />
             </handle>
           </Target>
         </DropdownSelection>

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:weightSum="3">
+
+    <LinearLayout
+        android:id="@+id/settings_container"
+        android:layout_width="0dp"
+        android:layout_weight="3"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_margin="10dp"
+        android:background="@drawable/black_background"
+        android:paddingStart="200dp"
+        android:paddingEnd="200dp">
+
+        <LinearLayout
+            android:id="@+id/theme_container"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="25dp"
+            android:background="@drawable/settings_background"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="60dp"
+                android:text="Theme"
+                android:textColor="@color/white"
+                android:textSize="28sp"/>
+
+            <ImageButton
+                android:id="@+id/theme_image"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/day"
+                android:layout_marginEnd="80dp"
+                android:background="#00000000"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/gesture_container"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="25dp"
+            android:background="@drawable/settings_background"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Gesture Control"
+                android:layout_marginStart="60dp"
+                android:textColor="@color/white"
+                android:textSize="28sp"/>
+
+            <ImageButton
+                android:id="@+id/gesture_image"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="#00000000"
+                android:scaleType="centerCrop"
+                android:layout_marginEnd="80dp"
+                android:src="@drawable/gesture" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/voice_container"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="25dp"
+            android:background="@drawable/settings_background"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Voice Assist"
+                android:textColor="@color/white"
+                android:layout_marginStart="60dp"
+                android:textSize="28sp"/>
+
+            <ImageButton
+                android:id="@+id/voice_image"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="#00000000"
+                android:scaleType="centerCrop"
+                android:layout_marginEnd="75dp"
+                android:src="@drawable/voice" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/language_container"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="25dp"
+            android:background="@drawable/settings_background"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Language"
+                android:textSize="28sp"
+                android:textColor="@color/white"
+                android:layout_marginStart="60dp"/>
+
+            <ImageButton
+                android:id="@+id/language_image"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="#00000000"
+                android:scaleType="centerCrop"
+                android:layout_marginEnd="75dp"
+                android:src="@drawable/english" />
+
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

@@ -6,6 +6,24 @@
     <uses-permission android:name="android.car.permission.READ_CAR_PROPERTY" />
     <uses-permission android:name="android.car.permission.WRITE_CAR_PROPERTY" />
     <uses-permission android:name="android.car.permission.CAR_VENDOR_EXTENSION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <uses-feature android:name="android.hardware.camera" />
+
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
 
     <application
         android:allowBackup="true"
@@ -16,9 +34,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.DriverLauncher"
-        tools:targetApi="31">
+        tools:targetApi="35">
         <activity
-            android:name=".carvitals.CarVitalsActivity"
+            android:name=".MainActivity"
             android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -26,14 +44,29 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".settings.SettingsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".home.HomeActivity"
-            android:exported="true">
 
-        </activity>
+        <service
+            android:name=".voskva.VoskRecognitionService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
+
+<!--        <service-->
+<!--            android:name=".handgesture.CameraCaptureService"-->
+<!--            android:enabled="true"-->
+<!--            android:exported="true"-->
+<!--            android:foregroundServiceType="camera"></service>-->
+
+<!--        <activity-->
+<!--            android:name=".carvitals.CarVitalsActivity"-->
+<!--            android:exported="true"></activity>-->
+<!--        <activity-->
+<!--            android:name=".settings.SettingsActivity"-->
+<!--            android:exported="false" />-->
+<!--        <activity-->
+<!--            android:name=".home.HomeActivity"-->
+<!--            android:exported="true">-->
+<!--        </activity>-->
     </application>
 
 </manifest>
