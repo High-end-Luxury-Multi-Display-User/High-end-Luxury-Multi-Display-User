@@ -2,13 +2,12 @@ package com.example.driverlauncher
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.car.Car
-import android.car.hardware.property.CarPropertyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
@@ -34,6 +33,7 @@ import androidx.core.content.ContextCompat
 import com.example.driverlauncher.carvitals.BatteryFragment
 import com.example.driverlauncher.carvitals.CarVitalsFragment
 import com.example.driverlauncher.carvitals.SeatFragment
+import com.example.driverlauncher.drawsiness.EyeDetectionService
 import com.example.driverlauncher.handgesture.YuvToRgbConverter
 import com.example.driverlauncher.home.DashboardFragment
 import com.example.driverlauncher.home.NavigationFragment
@@ -51,14 +51,20 @@ import org.tensorflow.lite.support.image.ops.ResizeOp
 import java.text.SimpleDateFormat
 import java.util.*
 
-class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCallback {
+class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCallback ,EyeDetectionService.DetectionCallback{
     companion object {
         const val PERMISSIONS_REQUEST_RECORD_AUDIO = 1
         var isServiceRunning = false
         var voskService: VoskRecognitionService? = null
         var isBound = false
         var lastCommand = ""
+        private const val TAG = "MainActivity"
+        private const val PERMISSIONS_REQUEST_CAMERA = 100
     }
+
+    private var eyeDetectionService: EyeDetectionService? = null
+    private var isBoundEye = false
+    private var isEyeDetectionEnabled = false
 //    private val VENDOR_EXTENSION_LIGHT_CONTROL_PROPERTY: Int = 0x21400106
 //    private val areaID = 0
 //    private lateinit var car: Car
@@ -87,6 +93,31 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     private var currentScreen = Screen.HOME // Track current screen state
     enum class Screen {
         HOME, CAR_VITALS, SETTINGS
+    }
+    private val serviceConnectionEye = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            Log.d(TAG, "Eye Service connected")
+            val binder = service as EyeDetectionService.LocalBinder
+            eyeDetectionService = binder.getService().apply {
+                setDetectionCallback(this@MainActivity)
+            }
+
+            isBoundEye = true
+            // Start detection right away
+            Intent(this@MainActivity, EyeDetectionService::class.java).apply {
+                action = EyeDetectionService.ACTION_START_DETECTION
+                startService(this)
+            }
+            isEyeDetectionEnabled = true
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            Log.d(TAG, "Eye Service disconnected")
+            isBoundEye = false
+            eyeDetectionService = null
+            isEyeDetectionEnabled = false
+
+        }
     }
 
     private val serviceConnection = object : ServiceConnection {
@@ -204,8 +235,26 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         imageProcessor = ImageProcessor.Builder()
             .add(ResizeOp(224, 224, ResizeOp.ResizeMethod.BILINEAR))
             .build()
-        checkCameraPermission()
+      //  checkCameraPermission()
+        /***************Drawsiness**************/
+        startServiceOnlyOnce()
+
+        // Request camera permission
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            Log.d(TAG, "Requesting camera permission")
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), PERMISSIONS_REQUEST_CAMERA)
+        } else {
+            Log.d(TAG, "Camera permission already granted")
+            bindService()
+        }
+
     }
+
+    private fun bindService() {
+        Log.d(TAG, "Binding to service")
+        bindService(Intent(this, EyeDetectionService::class.java), serviceConnectionEye, Context.BIND_AUTO_CREATE)
+    }
+
 
     private fun checkCameraPermission() {
         if (ContextCompat.checkSelfPermission(
@@ -403,7 +452,12 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == CAMERA_PERMISSION_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            setupCamera()
+         //   setupCamera()
+            Log.d(TAG, "Camera permission granted")
+            bindService()
+        }else {
+            Log.w(TAG, "Camera permission denied")
+            Toast.makeText(this, "Camera permission denied", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -479,6 +533,9 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
 
     override fun onResume() {
         super.onResume()
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            bindService()
+        }
         bindService(
             Intent(this, VoskRecognitionService::class.java),
             serviceConnection,
@@ -488,6 +545,10 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
 
     override fun onPause() {
         super.onPause()
+        if (isBoundEye) {
+            unbindService(serviceConnectionEye)
+            isBoundEye = false
+        }
         if (isBound) {
             unbindService(serviceConnection)
             isBound = false
@@ -579,6 +640,8 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     }
 
     private fun startServiceOnlyOnce() {
+        Log.d(TAG, "Starting service -- Vosk and Drawsiness")
+        startService(Intent(this, EyeDetectionService::class.java))
         startService(Intent(this, VoskRecognitionService::class.java))
         isServiceRunning = true
     }
@@ -601,5 +664,23 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         if (command == lastCommand) return
         lastCommand = command
         runOnUiThread { handleCommand(command) }
+    }
+    override fun onResultReceived(status: String) {
+        Log.d(TAG, "Result received: $status")
+
+    }
+
+    override fun onErrorReceived(error: String) {
+        Log.e(TAG, "Error received: $error")
+        runOnUiThread {
+            Toast.makeText(this, "Error: $error", Toast.LENGTH_LONG).show()
+
+        }
+    }
+
+    override fun onStatusReceived(isEnabled: Boolean) {
+        Log.d(TAG, "Status received: isEnabled=$isEnabled")
+        isEyeDetectionEnabled = isEnabled
+
     }
 }
