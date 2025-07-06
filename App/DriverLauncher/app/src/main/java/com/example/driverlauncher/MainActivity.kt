@@ -71,6 +71,8 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     private lateinit var homeIcon: ImageView
     private lateinit var carVitalsIcon: ImageView
     private lateinit var settingsIcon: ImageView
+
+    // Camera gesture model
     private lateinit var model: ModelMetadata
     private lateinit var imageProcessor: ImageProcessor
     private val CAMERA_PERMISSION_CODE = 100
@@ -81,8 +83,13 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     private lateinit var backgroundThread: HandlerThread
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private lateinit var audioManager: AudioManager
+    private var gestureSequenceCount = 0
+    private var lastDetectedGesture: String? = null
+    private val requiredSequentialFrames = 2
     private var lastGestureTime = 0L
-    private val gestureDebounceTime = 500L // 1 second debounce
+    private val iconRevertDelay = 3000L
+    private val gestureDebounceTime = 500L
+    private lateinit var ic_volume:ImageView
 
     private var currentScreen = Screen.HOME // Track current screen state
     enum class Screen {
@@ -118,6 +125,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
 
         // Initialize views
         lightIcon = findViewById(R.id.light_icon)
+        ic_volume = findViewById(R.id.ic_volume)
         timeTextView = findViewById(R.id.time) ?: run {
             Log.e("TimeUpdate", "Time TextView not found!")
             return
@@ -236,7 +244,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     }
 
     private fun setupImageReader() {
-        imageReader = ImageReader.newInstance(640, 480, android.graphics.ImageFormat.YUV_420_888, 2)
+        imageReader = ImageReader.newInstance(224, 224, android.graphics.ImageFormat.YUV_420_888, 2)
         imageReader.setOnImageAvailableListener({ reader ->
             val image = reader.acquireLatestImage() ?: return@setOnImageAvailableListener
             val bitmap = YuvToRgbConverter.yuvToRgb(this, image)
@@ -254,45 +262,100 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
                             if (it.score > 0.8f) {
                                 Log.i("Gesture", "Label: ${it.label}, DisplayName: ${it.displayName}, Score: ${it.score}")
                                 val currentTime = System.currentTimeMillis()
-                                if (currentTime - lastGestureTime > gestureDebounceTime) {
+
+                                // Check if the gesture is the same as the last one
+                                if (it.label == lastDetectedGesture) {
+                                    gestureSequenceCount++
+                                } else {
+                                    // Reset count if a different gesture is detected
+                                    lastDetectedGesture = it.label
+                                    gestureSequenceCount = 1
+                                }
+
+                                // Only act if we have enough sequential frames and debounce time is satisfied
+                                if (gestureSequenceCount >= requiredSequentialFrames &&
+                                    currentTime - lastGestureTime > gestureDebounceTime) {
                                     when (it.label) {
                                         "scrollup" -> {
-                                            audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
-                                            runOnUiThread {
-                                                Toast.makeText(this@MainActivity, "Volume Up", Toast.LENGTH_SHORT).show()
-                                            }
-                                            lastGestureTime = currentTime
-                                        }
-                                        "down" -> {
                                             audioManager.adjustVolume(AudioManager.ADJUST_MUTE, AudioManager.FLAG_SHOW_UI)
                                             runOnUiThread {
-                                                Toast.makeText(this@MainActivity, "Volume Down", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(this@MainActivity, "Mute", Toast.LENGTH_SHORT).show()
+                                                ic_volume.setImageResource(R.drawable.ic_mute)
+                                                updateVolumeIcon() // Update to reflect mute state
                                             }
                                             lastGestureTime = currentTime
+                                            resetGestureTracking()
+                                        }
+                                        "down" -> {
+                                            audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
+                                            runOnUiThread {
+                                                Toast.makeText(this@MainActivity, "Volume Down", Toast.LENGTH_SHORT).show()
+                                                ic_volume.setImageResource(R.drawable.ic_decrease)
+                                                // Revert icon after delay
+                                                timeUpdateHandler.postDelayed({
+                                                    updateVolumeIcon()
+                                                }, iconRevertDelay)
+                                            }
+                                            lastGestureTime = currentTime
+                                            resetGestureTracking()
                                         }
                                         "up" -> {
                                             audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
                                             runOnUiThread {
                                                 Toast.makeText(this@MainActivity, "Volume Up", Toast.LENGTH_SHORT).show()
+                                                ic_volume.setImageResource(R.drawable.ic_increase)
+                                                // Revert icon after delay
+                                                timeUpdateHandler.postDelayed({
+                                                    updateVolumeIcon()
+                                                }, iconRevertDelay)
                                             }
                                             lastGestureTime = currentTime
+                                            resetGestureTracking()
                                         }
-
-                                        else -> {}
+                                        else -> {
+                                            runOnUiThread {
+//                                                updateVolumeIcon()
+                                            }
+                                        }
                                     }
                                 } else {
-
+                                    runOnUiThread {
+//                                        updateVolumeIcon()
+                                    }
                                 }
                             } else {
+                                runOnUiThread {
+//                                    updateVolumeIcon()
+                                }
                                 Log.i("Gesture", "No gesture confident enough (max score: ${it.score})")
+                                resetGestureTracking()
                             }
                         }
+                    } else {
+                        runOnUiThread {
+                            updateVolumeIcon()
+                        }
+                        resetGestureTracking()
                     }
                 } catch (e: Exception) {
                     Log.e("Gesture", "Frame processing error", e)
+                    resetGestureTracking()
                 }
             }
         }, backgroundHandler)
+    }
+
+    // Helper function to update volume icon based on current audio state
+    private fun updateVolumeIcon() {
+        val isMuted = audioManager.isStreamMute(AudioManager.STREAM_MUSIC) ||
+                audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) == 0
+        ic_volume.setImageResource(if (isMuted) R.drawable.ic_mute else R.drawable.ic_volume)
+    }
+
+    // Helper function to reset gesture tracking
+    private fun resetGestureTracking() {
+        gestureSequenceCount = 0
+        lastDetectedGesture = null
     }
 
     @SuppressLint("MissingPermission")
