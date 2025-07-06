@@ -63,8 +63,8 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     }
 
     private var eyeDetectionService: EyeDetectionService? = null
-    private var isBoundEye = false
-    private var isEyeDetectionEnabled = false
+     var isBoundEye = true
+     var isEyeDetectionEnabled = false
 //    private val VENDOR_EXTENSION_LIGHT_CONTROL_PROPERTY: Int = 0x21400106
 //    private val areaID = 0
 //    private lateinit var car: Car
@@ -103,12 +103,6 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
             }
 
             isBoundEye = true
-            // Start detection right away
-            Intent(this@MainActivity, EyeDetectionService::class.java).apply {
-                action = EyeDetectionService.ACTION_START_DETECTION
-                startService(this)
-            }
-            isEyeDetectionEnabled = true
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -255,7 +249,22 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         bindService(Intent(this, EyeDetectionService::class.java), serviceConnectionEye, Context.BIND_AUTO_CREATE)
     }
 
+     fun toggleEyeService() {
+        Intent(this, EyeDetectionService::class.java).apply {
+            action = if (isEyeDetectionEnabled) {
+                EyeDetectionService.ACTION_STOP_DETECTION
+            } else {
+                EyeDetectionService.ACTION_START_DETECTION
+            }
+            startService(this)
+        }
+        isEyeDetectionEnabled = !isEyeDetectionEnabled
+        updateToggleButton()
+    }
 
+    private fun updateToggleButton() {
+        Log.d(TAG, "Updating toggle button: isEnabled=$isEyeDetectionEnabled")
+    }
     private fun checkCameraPermission() {
         if (ContextCompat.checkSelfPermission(
                 this,
