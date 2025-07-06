@@ -22,7 +22,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:text="SEAT"
-            android:textColor="@color/white"
+            android:textColor="@color/time"
             android:textSize="28sp"
             android:textStyle="bold" />
 
@@ -32,7 +32,7 @@
             android:layout_height="wrap_content"
             android:text="ADJUSTMENT"
             android:textSize="20sp"
-            android:textColor="@color/white"
+            android:textColor="@color/time"
             android:textStyle="bold"
             android:layout_marginBottom="4dp" />
 

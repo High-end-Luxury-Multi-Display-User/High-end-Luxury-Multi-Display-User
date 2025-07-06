@@ -39,7 +39,7 @@
                 android:text="75%"
                 android:textSize="26sp"
                 android:textStyle="bold"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/time"
                 android:layout_centerInParent="true" />
 
             <ImageView
