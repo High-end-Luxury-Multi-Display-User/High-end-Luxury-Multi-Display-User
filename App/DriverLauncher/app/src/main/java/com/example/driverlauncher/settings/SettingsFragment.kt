@@ -19,6 +19,7 @@ import com.example.driverlauncher.R
 import com.example.driverlauncher.drawsiness.EyeDetectionService
 
 class SettingsFragment : Fragment() {
+    private var isDrowsinessEnabledUI = false
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -72,57 +73,32 @@ class SettingsFragment : Fragment() {
 //        languageImage.setOnClickListener {
 //            toggleImage(languageImage, R.drawable.english, R.drawable.arabic)
 //        }
-            val drawsinessContainer = view.findViewById<LinearLayout>(R.id.drawsiness_container)
-            val drawsinessImage = view.findViewById<ImageButton>(R.id.drawsiness_image)
-            drawsinessContainer.setOnClickListener {
-                val mainActivity = activity as? MainActivity
-                val isBoundEye = mainActivity?.isBoundEye ?: false
-                val isEyeDetectionEnabled = mainActivity?.isEyeDetectionEnabled ?: false
-                toggleImage(drawsinessImage, R.drawable.ic_drowsiness, R.drawable.ic_drawsiness_off)
-                Log.d("Settings Activity", "Toggle button clicked, isBound=$isBoundEye, isEnabled=$isEyeDetectionEnabled")
-                if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                    Log.w("Settings Activity", "Camera permission not granted")
-                    Toast.makeText(requireContext(), "Camera permission required", Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-                if (isBoundEye) {
-                    if (mainActivity != null) {
-                        mainActivity.toggleEyeService()
-                    } else {
-                        Log.e("SettingsFragment", "MainActivity reference is null")
-                    }
+        val drawsinessContainer = view.findViewById<LinearLayout>(R.id.drawsiness_container)
+        val drawsinessImage = view.findViewById<ImageButton>(R.id.drawsiness_image)
 
-                } else {
-                    Log.w("Settings Activity", "Service not bound")
-                    Toast.makeText(requireContext(), "Service not bound", Toast.LENGTH_SHORT).show()
-                }
+        val onClickListener = View.OnClickListener {
+            val mainActivity = activity as? MainActivity
+            val isBoundEye = mainActivity?.isBoundEye ?: false
+            val isEyeDetectionEnabled = mainActivity?.isEyeDetectionEnabled ?: false
+
+            Log.d("SettingsFragment", "Drowsiness clicked: isBound=$isBoundEye, isEnabled=$isEyeDetectionEnabled")
+
+            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(requireContext(), "Camera permission required", Toast.LENGTH_SHORT).show()
+                return@OnClickListener
             }
 
-            drawsinessImage.setOnClickListener {
-                val mainActivity = activity as? MainActivity
-                val isBoundEye = mainActivity?.isBoundEye ?: false
-                val isEyeDetectionEnabled = mainActivity?.isEyeDetectionEnabled ?: false
-               toggleImage(drawsinessImage, R.drawable.ic_drowsiness, R.drawable.ic_drawsiness_off)
-                Log.d("Settings Activity", "Toggle button clicked, isBound=$isBoundEye, isEnabled=$isEyeDetectionEnabled")
-                if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                    Log.w("Settings Activity", "Camera permission not granted")
-                    Toast.makeText(requireContext(), "Camera permission required", Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-                if (isBoundEye) {
-                    if (mainActivity != null) {
-                        mainActivity.toggleEyeService()
-                    } else {
-                        Log.e("SettingsFragment", "MainActivity reference is null")
-                    }
-
-                } else {
-                    Log.w("Settings Activity", "Service not bound")
-                    Toast.makeText(requireContext(), "Service not bound", Toast.LENGTH_SHORT).show()
-                }
+            if (isBoundEye) {
+                mainActivity?.toggleEyeService()
+                toggleDrowsinessIcon(drawsinessImage)
+            } else {
+                Toast.makeText(requireContext(), "Service not bound", Toast.LENGTH_SHORT).show()
             }
+        }
 
-  }
+        drawsinessContainer.setOnClickListener(onClickListener)
+        drawsinessImage.setOnClickListener(onClickListener)
+    }
 
 
     private fun toggleImage(imageButton: ImageButton, offResource: Int, onResource: Int) {
@@ -132,7 +108,20 @@ class SettingsFragment : Fragment() {
             imageButton.setImageResource(offResource)
         }
     }
+    private fun toggleDrowsinessIcon(imageButton: ImageButton) {
+        isDrowsinessEnabledUI = !isDrowsinessEnabledUI
+        imageButton.setImageResource(
+            if (isDrowsinessEnabledUI) R.drawable.eye_enabled else R.drawable.eye_disabled
+        )
+    }
 
+    // ✅ FIX: Public method to allow MainActivity to update icon when detection state changes
+    fun updateDrowsinessIcon(enabled: Boolean) {
+        isDrowsinessEnabledUI = enabled
+        view?.findViewById<ImageButton>(R.id.drawsiness_image)?.setImageResource(
+            if (enabled) R.drawable.eye_enabled else R.drawable.eye_disabled
+        )
+    }
     fun updateVoiceImage() {
         val isRunning = MainActivity.isServiceRunning
         view?.findViewById<ImageButton>(R.id.voice_image)?.setImageResource(

@@ -138,7 +138,7 @@
                 android:background="#00000000"
                 android:scaleType="centerCrop"
                 android:layout_marginEnd="75dp"
-                android:src="@drawable/ic_drowsiness" />
+                android:src="@drawable/eye_disabled" />
 
         </LinearLayout>
     </LinearLayout>

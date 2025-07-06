@@ -690,6 +690,10 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     override fun onStatusReceived(isEnabled: Boolean) {
         Log.d(TAG, "Status received: isEnabled=$isEnabled")
         isEyeDetectionEnabled = isEnabled
+        val settingsFragment = supportFragmentManager.findFragmentById(R.id.settingsFragmentContainer)
+        if (settingsFragment is SettingsFragment) {
+            settingsFragment.updateDrowsinessIcon(isEnabled)
+        }
 
     }
 }
