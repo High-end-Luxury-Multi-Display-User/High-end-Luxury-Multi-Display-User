@@ -200,11 +200,11 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         timeUpdateHandler.postDelayed(timeUpdateRunnable, 60000)
 
         // Camera Model
-        model = ModelMetadata.newInstance(this)
-        imageProcessor = ImageProcessor.Builder()
-            .add(ResizeOp(224, 224, ResizeOp.ResizeMethod.BILINEAR))
-            .build()
-        checkCameraPermission()
+//        model = ModelMetadata.newInstance(this)
+//        imageProcessor = ImageProcessor.Builder()
+//            .add(ResizeOp(224, 224, ResizeOp.ResizeMethod.BILINEAR))
+//            .build()
+//        checkCameraPermission()
     }
 
     private fun checkCameraPermission() {

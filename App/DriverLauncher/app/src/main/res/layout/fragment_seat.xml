@@ -5,7 +5,7 @@
     android:id="@+id/seatFragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/black_background"
+    android:background="@drawable/bg_whole_background"
     android:padding="16dp">
 
     <LinearLayout
