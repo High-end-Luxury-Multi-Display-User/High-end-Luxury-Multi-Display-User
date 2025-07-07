@@ -2,8 +2,6 @@ package com.example.driverlauncher
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.car.Car
-import android.car.hardware.property.CarPropertyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -54,6 +52,7 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.text.SimpleDateFormat
 import java.util.*
+import java.lang.reflect.Method
 
 class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCallback {
     companion object {
@@ -96,24 +95,64 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     private val gestureDebounceTime = 1000L
     private lateinit var ic_volume:ImageView
 
+
     private fun executeShellCommand(command: String): Pair<Boolean, String> {
         try {
-            val process = Runtime.getRuntime().exec(command)
+            // Use reflection to invoke Runtime.getRuntime().exec
+            val runtimeClass = Class.forName("java.lang.Runtime")
+            val getRuntimeMethod: Method = runtimeClass.getDeclaredMethod("getRuntime")
+            val runtime: Any = getRuntimeMethod.invoke(null) // Get Runtime instance
+            val execMethod: Method = runtimeClass.getDeclaredMethod("exec", String::class.java)
+            val process: Process = execMethod.invoke(runtime, command) as Process
+
             val output = BufferedReader(InputStreamReader(process.inputStream)).use { it.readText() }
             val error = BufferedReader(InputStreamReader(process.errorStream)).use { it.readText() }
             val exitCode = process.waitFor()
             if (exitCode == 0) {
-                Log.i("SettingsFragment", "Executed shell command: $command, output: $output")
+                Log.i("ExecCommand", "Executed shell command via reflection: $command, output: $output")
                 return Pair(true, output)
             } else {
-                Log.e("SettingsFragment", "Shell command failed: $command, error: $error, exit code: $exitCode")
+                Log.e("ExecCommand", "Shell command failed: $command, error: $error, exit code: $exitCode")
                 return Pair(false, error)
             }
         } catch (e: Exception) {
-            Log.e("SettingsFragment", "Failed to execute shell command: ${e.message}", e)
+            Log.e("ExecCommand", "Failed to execute shell command via reflection: ${e.message}", e)
             return Pair(false, e.message ?: "Unknown error")
         }
     }
+    private fun executeCommandViaReflection(command: String): Boolean {
+        try {
+            val runtimeClass = Class.forName("java.lang.Runtime")
+            val getRuntimeMethod: Method = runtimeClass.getDeclaredMethod("getRuntime")
+            val runtime: Any = getRuntimeMethod.invoke(null) // Get Runtime instance
+            val execMethod: Method = runtimeClass.getDeclaredMethod("exec", String::class.java)
+            val process: Process = execMethod.invoke(runtime, command) as Process
+            val exitCode = process.waitFor()
+            Log.d("Reflection", "Command executed: $command, Exit code: $exitCode")
+            return exitCode == 0
+        } catch (e: Exception) {
+            Log.e("Reflection", "Failed to execute command via reflection: ${e.message}", e)
+            return false
+        }
+    }
+//    private fun executeShellCommand(command: String): Pair<Boolean, String> {
+//        try {
+//            val process = Runtime.getRuntime().exec(command)
+//            val output = BufferedReader(InputStreamReader(process.inputStream)).use { it.readText() }
+//            val error = BufferedReader(InputStreamReader(process.errorStream)).use { it.readText() }
+//            val exitCode = process.waitFor()
+//            if (exitCode == 0) {
+//                Log.i("ExecCommand", "Executed shell command: $command, output: $output")
+//                return Pair(true, output)
+//            } else {
+//                Log.e("ExecCommand", "Shell command failed: $command, error: $error, exit code: $exitCode")
+//                return Pair(false, error)
+//            }
+//        } catch (e: Exception) {
+//            Log.e("ExecCommand", "Failed to execute shell command: ${e.message}", e)
+//            return Pair(false, e.message ?: "Unknown error")
+//        }
+//    }
 
     private var currentScreen = Screen.HOME // Track current screen state
     enum class Screen {
@@ -139,6 +178,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        Log.w("ExecCommand","test")
         /*********************************************/
         // VA shenanigans
        // checkPermissions()
@@ -238,7 +278,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
             .build()
         checkCameraPermission()
 
-        ic_volume.setOnClickListener{
+//        ic_volume.setOnClickListener{
 //            try {
 //                Runtime.getRuntime().exec(arrayOf("sh", "-c", "input keyevent 24"))
 //            } catch (e: Exception) {
@@ -249,23 +289,38 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
 //                AudioManager.ADJUST_RAISE,
 //                AudioManager.FLAG_SHOW_UI
 //            )
-            val overlayPackage = "com.example.lightmode"
-            val userId = 10
-            try {
-                val (success, output) = executeShellCommand("adb shell input keyevent 24")
-                if (success) {
-                    val enabled = output.lines().any { it.contains("[x] $overlayPackage") }
-                    Log.i("SettingsFragment", "Overlay state check: enabled=$enabled, output=$output")
-//                    return enabled
-                } else {
-                    Log.w("SettingsFragment", "Failed to check overlay state: $output")
+//            val audio = "com.example.driverlauncher"
+//            val userId = 10
+//            try {
+//                val (success, output) = executeShellCommand("adb shell input keyevent 24")
+//                if (success) {
+//                    val enabled = output.lines().any { it.contains("[x] $audio") }
+//                    Log.i("ExecCommand", "Overlay state check: enabled=$enabled, output=$output")
+////                    return enabled
+//                } else {
+//                    Log.w("ExecCommand", "Failed to check overlay state: $output")
+//                }
+//            } catch (e: Exception) {
+//                Log.w("ExecCommand", "Error checking overlay state: ${e.message}")
+//            }
+//            audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
+//            updateVolumeIcon()
+//        }
+
+        ic_volume.setOnClickListener {
+            val success = executeCommandViaReflection("input keyevent 24")
+            if (success) {
+                Log.d("Reflection", "Volume up command executed")
+                updateVolumeIcon()
+            } else {
+                Log.e("Reflection", "Failed to execute volume up command")
+                runOnUiThread {
+                    Toast.makeText(this, "Failed to adjust volume", Toast.LENGTH_SHORT).show()
                 }
-            } catch (e: Exception) {
-                Log.w("SettingsFragment", "Error checking overlay state: ${e.message}")
             }
-            audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
-            updateVolumeIcon()
+            executeShellCommand("input keyevent 24")
         }
+
 
         val userContainer = findViewById<LinearLayout>(R.id.driver_profile)
             ?: throw IllegalStateException("Missing user_container")
