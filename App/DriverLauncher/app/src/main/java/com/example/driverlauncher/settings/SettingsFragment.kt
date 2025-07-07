@@ -1,15 +1,14 @@
 package com.example.driverlauncher.settings
 
 import android.Manifest
+import android.content.pm.PackageManager
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.util.Log
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.util.Log
+import android.view.*
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.Toast
@@ -23,7 +22,6 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 
 class SettingsFragment : Fragment() {
-
     lateinit var themeImage : ImageButton
 
     override fun onCreateView(
@@ -48,8 +46,7 @@ class SettingsFragment : Fragment() {
         themeImage.setOnClickListener @RequiresPermission(Manifest.permission.KILL_BACKGROUND_PROCESSES) {
             toggleOverlayTheme()
         }
-
-        // Gesture Control Switch
+       //Gesture Switch 
         val gestureContainer = view.findViewById<LinearLayout>(R.id.gesture_container)
         val gestureImage = view.findViewById<ImageButton>(R.id.gesture_image)
         gestureContainer.setOnClickListener {
@@ -58,8 +55,17 @@ class SettingsFragment : Fragment() {
         gestureImage.setOnClickListener {
             toggleImage(gestureImage, R.drawable.gesture, R.drawable.no_gesture)
         }
+        
+          // Language Switch
+//        val languageContainer = view?.findViewById<LinearLayout>(R.id.language_container)
+//        val languageImage = view?.findViewById<ImageButton>(R.id.language_image)
+//        languageContainer.setOnClickListener {
+//            toggleImage(languageImage, R.drawable.english, R.drawable.arabic)
+//        }
+//        languageImage.setOnClickListener {
+//            toggleImage(languageImage, R.drawable.english, R.drawable.arabic)
+//        }
 
-        // Voice Assist Switch
         val voiceContainer = view.findViewById<LinearLayout>(R.id.voice_container)
         val voiceImage = view.findViewById<ImageButton>(R.id.voice_image)
         voiceContainer.setOnClickListener {
@@ -69,24 +75,57 @@ class SettingsFragment : Fragment() {
             (activity as? MainActivity)?.toggleService()
         }
 
-        // Set initial state
         updateVoiceImage()
         updateThemeImage(themeImage)
+
+        // Drowsiness toggle
+        val drowsinessContainer = view.findViewById<LinearLayout>(R.id.drawsiness_container)
+        val drowsinessImage = view.findViewById<ImageButton>(R.id.drawsiness_image)
+
+        val onClickListener = View.OnClickListener {
+            val mainActivity = activity as? MainActivity
+            if (mainActivity == null || mainActivity.isDestroyed) {
+                Log.w("SettingsFragment", "MainActivity is null")
+                return@OnClickListener
+            }
+
+            // Check permission
+            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(requireContext(), "Camera permission required", Toast.LENGTH_SHORT).show()
+                return@OnClickListener
+            }
+
+            // Ensure service is bound
+            if (!mainActivity.isBoundEye) {
+                Toast.makeText(requireContext(), "Drowsiness service not yet available", Toast.LENGTH_SHORT).show()
+                return@OnClickListener
+            }
+
+            // Toggle eye detection and get new state
+            val newState = mainActivity.toggleEyeService()
+            updateDrowsinessIcon(newState)
+        }
+
+        drowsinessContainer.setOnClickListener(onClickListener)
+        drowsinessImage.setOnClickListener(onClickListener)
+       
     }
 
     @SuppressLint("UseCompatLoadingForDrawables", "UseRequireInsteadOfGet")
     private fun toggleImage(imageButton: ImageButton, offResource: Int, onResource: Int) {
-        Log.i("SettingsFragment", "toggleImage: current=${imageButton.drawable.constantState}, off=$offResource, on=$onResource")
+        val current = imageButton.drawable?.constantState
+        val off = resources.getDrawable(offResource, null).constantState
+        imageButton.setImageResource(if (current == off) onResource else offResource)
+         Log.i("SettingsFragment", "toggleImage: current=${imageButton.drawable.constantState}, off=$offResource, on=$onResource"
+    }
 
-//        // Language Switch
-//        val languageContainer = view?.findViewById<LinearLayout>(R.id.language_container)
-//        val languageImage = view?.findViewById<ImageButton>(R.id.language_image)
-//        languageContainer.setOnClickListener {
-//            toggleImage(languageImage, R.drawable.english, R.drawable.arabic)
-//        }
-//        languageImage.setOnClickListener {
-//            toggleImage(languageImage, R.drawable.english, R.drawable.arabic)
-//        }
+    // Update from inside or outside
+    fun updateDrowsinessIcon(enabled: Boolean) {
+        view?.findViewById<ImageButton>(R.id.drawsiness_image)?.setImageResource(
+            if (enabled) R.drawable.eye_enabled else R.drawable.eye_disabled
+        )
+       
+
     }
 
     fun updateVoiceImage() {
@@ -105,7 +144,10 @@ class SettingsFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         updateVoiceImage()
-        view?.findViewById<ImageButton>(R.id.theme_image)?.let { updateThemeImage(it) }
+         view?.findViewById<ImageButton>(R.id.theme_image)?.let { updateThemeImage(it) }
+      // Update drowsiness icon from actual state
+        val mainActivity = activity as? MainActivity
+        updateDrowsinessIcon(mainActivity?.isEyeDetectionEnabled ?: false    
     }
 
     @RequiresPermission(Manifest.permission.KILL_BACKGROUND_PROCESSES)
