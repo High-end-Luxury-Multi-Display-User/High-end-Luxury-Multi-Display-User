@@ -9,6 +9,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.graphics.ImageFormat
+import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
@@ -63,6 +65,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
 //    private val areaID = 0
 //    private lateinit var car: Car
 //    private lateinit var carPropertyManager: CarPropertyManager
+    private var isModelClosed = false // Track model state
     private var ledState = false // false = off, true = on
     private lateinit var lightIcon: ImageView
     private lateinit var timeTextView: TextView
@@ -88,7 +91,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     private val requiredSequentialFrames = 2
     private var lastGestureTime = 0L
     private val iconRevertDelay = 3000L
-    private val gestureDebounceTime = 500L
+    private val gestureDebounceTime = 1000L
     private lateinit var ic_volume:ImageView
 
     private var currentScreen = Screen.HOME // Track current screen state
@@ -117,8 +120,8 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
 
         /*********************************************/
         // VA shenanigans
-        checkPermissions()
-        startServiceOnlyOnce()
+       // checkPermissions()
+       // startServiceOnlyOnce()
         /********************************************/
         // Initialize AudioManager
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -213,6 +216,11 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
             .add(ResizeOp(224, 224, ResizeOp.ResizeMethod.BILINEAR))
             .build()
         checkCameraPermission()
+
+        ic_volume.setOnClickListener{
+            audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
+            updateVolumeIcon()
+        }
     }
 
     private fun checkCameraPermission() {
@@ -244,107 +252,134 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     }
 
     private fun setupImageReader() {
-        imageReader = ImageReader.newInstance(224, 224, android.graphics.ImageFormat.YUV_420_888, 2)
+        imageReader = ImageReader.newInstance(224, 224, ImageFormat.YUV_420_888, 2)
         imageReader.setOnImageAvailableListener({ reader ->
-            val image = reader.acquireLatestImage() ?: return@setOnImageAvailableListener
-            val bitmap = YuvToRgbConverter.yuvToRgb(this, image)
-            image.close()
-
-            scope.launch {
-                try {
-                    val tensorImage = imageProcessor.process(TensorImage.fromBitmap(bitmap))
-                    val outputs = model.process(tensorImage)
-                    val detectionResult = outputs.probabilityAsCategoryList
-
-                    if (detectionResult.isNotEmpty()) {
-                        val bestResult = detectionResult.maxByOrNull { it.score }
-                        bestResult?.let {
-                            if (it.score > 0.8f) {
-                                Log.i("Gesture", "Label: ${it.label}, DisplayName: ${it.displayName}, Score: ${it.score}")
-                                val currentTime = System.currentTimeMillis()
-
-                                // Check if the gesture is the same as the last one
-                                if (it.label == lastDetectedGesture) {
-                                    gestureSequenceCount++
-                                } else {
-                                    // Reset count if a different gesture is detected
-                                    lastDetectedGesture = it.label
-                                    gestureSequenceCount = 1
-                                }
-
-                                // Only act if we have enough sequential frames and debounce time is satisfied
-                                if (gestureSequenceCount >= requiredSequentialFrames &&
-                                    currentTime - lastGestureTime > gestureDebounceTime) {
-                                    when (it.label) {
-                                        "scrollup" -> {
-                                            audioManager.adjustVolume(AudioManager.ADJUST_MUTE, AudioManager.FLAG_SHOW_UI)
-                                            runOnUiThread {
-                                                Toast.makeText(this@MainActivity, "Mute", Toast.LENGTH_SHORT).show()
-                                                ic_volume.setImageResource(R.drawable.ic_mute)
-                                                updateVolumeIcon() // Update to reflect mute state
+            val image = reader.acquireNextImage() ?: return@setOnImageAvailableListener
+            try {
+                val bitmap = YuvToRgbConverter.yuvToRgb(this, image) ?: return@setOnImageAvailableListener
+                scope.launch {
+                    try {
+                        synchronized(model) {
+                            if (!isModelClosed) {
+                                val tensorImage = imageProcessor.process(TensorImage.fromBitmap(bitmap))
+                                val outputs = model.process(tensorImage)
+                                val detectionResult = outputs.probabilityAsCategoryList
+                                if (detectionResult.isNotEmpty()) {
+                                    val bestResult = detectionResult.maxByOrNull { it.score }
+                                    bestResult?.let {
+                                        if (it.score > 0.8f) {
+                                            Log.i("Gesture", "Label: ${it.label}, Score: ${it.score}")
+                                            val currentTime = System.currentTimeMillis()
+                                            if (it.label == lastDetectedGesture) {
+                                                gestureSequenceCount++
+                                            } else {
+                                                lastDetectedGesture = it.label
+                                                gestureSequenceCount = 1
                                             }
-                                            lastGestureTime = currentTime
+                                            if (gestureSequenceCount >= requiredSequentialFrames &&
+                                                currentTime - lastGestureTime > gestureDebounceTime
+                                            ) {
+                                                when (it.label) {
+                                                    "scrollup" -> {
+                                                        audioManager.adjustVolume(AudioManager.ADJUST_MUTE, AudioManager.FLAG_SHOW_UI)
+                                                        runOnUiThread {
+                                                            Toast.makeText(this@MainActivity, "Mute", Toast.LENGTH_SHORT).show()
+                                                            ic_volume.setImageResource(R.drawable.ic_mute)
+                                                            updateVolumeIcon()
+                                                        }
+                                                        lastGestureTime = currentTime
+                                                        resetGestureTracking()
+                                                    }
+                                                    "down" -> {
+                                                        audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
+                                                        runOnUiThread {
+                                                            Toast.makeText(this@MainActivity, "Volume Down", Toast.LENGTH_SHORT).show()
+                                                            ic_volume.setImageResource(R.drawable.ic_decrease)
+                                                            timeUpdateHandler.postDelayed({
+                                                                updateVolumeIcon()
+                                                            }, iconRevertDelay)
+                                                        }
+                                                        lastGestureTime = currentTime
+                                                        resetGestureTracking()
+                                                    }
+                                                    "up" -> {
+                                                        audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
+                                                        runOnUiThread {
+                                                            Toast.makeText(this@MainActivity, "Volume Up", Toast.LENGTH_SHORT).show()
+                                                            ic_volume.setImageResource(R.drawable.ic_increase)
+                                                            timeUpdateHandler.postDelayed({
+                                                                updateVolumeIcon()
+                                                            }, iconRevertDelay)
+                                                        }
+                                                        lastGestureTime = currentTime
+                                                        resetGestureTracking()
+                                                    }
+                                                    else -> {
+                                                        runOnUiThread { updateVolumeIcon() }
+                                                    }
+                                                }
+                                            } else {
+                                                runOnUiThread { updateVolumeIcon() }
+                                            }
+                                        } else {
+                                            Log.i("Gesture", "No gesture confident enough (max score: ${it.score})")
                                             resetGestureTracking()
-                                        }
-                                        "down" -> {
-                                            audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
-                                            runOnUiThread {
-                                                Toast.makeText(this@MainActivity, "Volume Down", Toast.LENGTH_SHORT).show()
-                                                ic_volume.setImageResource(R.drawable.ic_decrease)
-                                                // Revert icon after delay
-                                                timeUpdateHandler.postDelayed({
-                                                    updateVolumeIcon()
-                                                }, iconRevertDelay)
-                                            }
-                                            lastGestureTime = currentTime
-                                            resetGestureTracking()
-                                        }
-                                        "up" -> {
-                                            audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
-                                            runOnUiThread {
-                                                Toast.makeText(this@MainActivity, "Volume Up", Toast.LENGTH_SHORT).show()
-                                                ic_volume.setImageResource(R.drawable.ic_increase)
-                                                // Revert icon after delay
-                                                timeUpdateHandler.postDelayed({
-                                                    updateVolumeIcon()
-                                                }, iconRevertDelay)
-                                            }
-                                            lastGestureTime = currentTime
-                                            resetGestureTracking()
-                                        }
-                                        else -> {
-                                            runOnUiThread {
-//                                                updateVolumeIcon()
-                                            }
                                         }
                                     }
                                 } else {
-                                    runOnUiThread {
-//                                        updateVolumeIcon()
-                                    }
+                                    runOnUiThread { updateVolumeIcon() }
+                                    resetGestureTracking()
                                 }
-                            } else {
-                                runOnUiThread {
-//                                    updateVolumeIcon()
-                                }
-                                Log.i("Gesture", "No gesture confident enough (max score: ${it.score})")
-                                resetGestureTracking()
                             }
                         }
-                    } else {
-                        runOnUiThread {
-                            updateVolumeIcon()
-                        }
+                    } catch (e: Exception) {
+                        Log.e("Gesture", "Frame processing error", e)
                         resetGestureTracking()
                     }
-                } catch (e: Exception) {
-                    Log.e("Gesture", "Frame processing error", e)
-                    resetGestureTracking()
                 }
+            } catch (e: Exception) {
+                Log.e("Gesture", "Image processing error", e)
+            } finally {
+                image.close()
             }
         }, backgroundHandler)
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        try {
+            captureSession?.stopRepeating()
+            captureSession?.close()
+            captureSession = null
+        } catch (e: Exception) {
+            Log.e("CameraDebug", "Error stopping capture session", e)
+        }
+        try {
+            cameraDevice?.close()
+            cameraDevice = null
+        } catch (e: Exception) {
+            Log.e("CameraDebug", "Error closing camera device", e)
+        }
+        try {
+            imageReader.setOnImageAvailableListener(null, null)
+            imageReader.close()
+        } catch (e: Exception) {
+            Log.e("CameraDebug", "Error closing image reader", e)
+        }
+        try {
+            scope.cancel()
+            isModelClosed = true
+            model.close()
+        } catch (e: Exception) {
+            Log.e("Model", "Error closing model", e)
+        }
+        try {
+            backgroundThread.quitSafely()
+        } catch (e: Exception) {
+            Log.e("CameraDebug", "Error quitting background thread", e)
+        }
+        timeUpdateHandler.removeCallbacks(timeUpdateRunnable)
+    }
     // Helper function to update volume icon based on current audio state
     private fun updateVolumeIcon() {
         val isMuted = audioManager.isStreamMute(AudioManager.STREAM_MUSIC) ||
@@ -357,47 +392,130 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         gestureSequenceCount = 0
         lastDetectedGesture = null
     }
-
     @SuppressLint("MissingPermission")
     private fun openCamera() {
         val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
-        val cameraId = cameraManager.cameraIdList.first { id ->
-            val characteristics = cameraManager.getCameraCharacteristics(id)
-            characteristics.get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_BACK
+        try {
+            val cameraIds = cameraManager.cameraIdList
+            if (cameraIds.isEmpty()) {
+                Log.e("CameraDebug", "No cameras found in cameraIdList")
+//                handleNoCameraAvailable("No cameras available")
+                return
+            }
+            Log.d("CameraDebug", "Available cameras: ${cameraIds.joinToString()}")
+            cameraIds.forEach { id ->
+                try {
+                    val characteristics = cameraManager.getCameraCharacteristics(id)
+                    val facing = characteristics.get(CameraCharacteristics.LENS_FACING)
+                    val facingString = when (facing) {
+                        CameraCharacteristics.LENS_FACING_FRONT -> "Front-facing"
+                        CameraCharacteristics.LENS_FACING_BACK -> "Rear-facing"
+                        CameraCharacteristics.LENS_FACING_EXTERNAL -> "External"
+                        else -> "Unknown ($facing)"
+                    }
+                    Log.d("CameraDebug", "Camera ID: $id, Facing: $facingString")
+                } catch (e: CameraAccessException) {
+                    Log.e("CameraDebug", "Failed to get characteristics for camera ID: $id", e)
+                }
+            }
+        } catch (e: CameraAccessException) {
+            Log.e("CameraDebug", "Failed to list cameras: ${e.reason}", e)
+//            handleNoCameraAvailable("Camera access denied: ${e.reason}")
+            return
+        } catch (e: Exception) {
+            Log.e("CameraDebug", "Unexpected error listing cameras", e)
+//            handleNoCameraAvailable("Unexpected error listing cameras")
+            return
         }
 
-        cameraManager.openCamera(cameraId, object : CameraDevice.StateCallback() {
-            override fun onOpened(camera: CameraDevice) {
-                cameraDevice = camera
-                val surface = imageReader.surface
-                val requestBuilder = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
-                requestBuilder.addTarget(surface)
+        val cameraId = try {
+            val rearCamera = cameraManager.cameraIdList.firstOrNull { id ->
+                val characteristics = cameraManager.getCameraCharacteristics(id)
+                characteristics.get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_BACK
+            }
+            Log.d("CameraDebug", "Rear-facing camera: ${rearCamera ?: "none"}")
+            rearCamera ?: cameraManager.cameraIdList.firstOrNull().also {
+                Log.d("CameraDebug", "Falling back to camera: $it")
+            }
+        } catch (e: Exception) {
+            Log.e("CameraDebug", "Failed to select camera", e)
+//            handleNoCameraAvailable("Failed to select camera")
+            return
+        }
 
-                camera.createCaptureSession(listOf(surface), object : CameraCaptureSession.StateCallback() {
-                    override fun onConfigured(session: CameraCaptureSession) {
-                        captureSession = session
-                        session.setRepeatingRequest(requestBuilder.build(), null, backgroundHandler)
-                        Log.d("CameraDebug", "Capture session started")
+        if (cameraId == null) {
+            Log.e("CameraDebug", "No cameras available or accessible")
+//            handleNoCameraAvailable("No cameras available")
+            return
+        }
+
+        try {
+            Log.d("CameraDebug", "Attempting to open camera ID: $cameraId")
+            cameraManager.openCamera(cameraId, object : CameraDevice.StateCallback() {
+                override fun onOpened(camera: CameraDevice) {
+                    cameraDevice = camera
+                    Log.d("CameraDebug", "Camera $cameraId opened successfully")
+                    val surface = imageReader?.surface ?: run {
+                        Log.e("CameraDebug", "ImageReader surface is null")
+//                        handleNoCameraAvailable("ImageReader surface unavailable")
+                        return
                     }
-
-                    override fun onConfigureFailed(session: CameraCaptureSession) {
-                        Log.e("CameraDebug", "Configuration failed")
+                    val requestBuilder = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
+                    requestBuilder.addTarget(surface)
+                    camera.createCaptureSession(listOf(surface), object : CameraCaptureSession.StateCallback() {
+                        override fun onConfigured(session: CameraCaptureSession) {
+                            captureSession = session
+                            try {
+                                session.setRepeatingRequest(requestBuilder.build(), null, backgroundHandler)
+                                Log.d("CameraDebug", "Capture session started for camera ID: $cameraId")
+                            } catch (e: Exception) {
+                                Log.e("CameraDebug", "Failed to start repeating request", e)
+//                                handleNoCameraAvailable("Failed to start capture session")
+                            }
+                        }
+                        override fun onConfigureFailed(session: CameraCaptureSession) {
+                            Log.e("CameraDebug", "Capture session configuration failed for camera ID: $cameraId")
+//                            handleNoCameraAvailable("Capture session configuration failed")
+                        }
+                    }, backgroundHandler)
+                }
+                override fun onDisconnected(camera: CameraDevice) {
+                    Log.w("CameraDebug", "Camera disconnected: $cameraId")
+                    camera.close()
+                    cameraDevice = null
+//                    handleNoCameraAvailable("Camera disconnected")
+                }
+                override fun onError(camera: CameraDevice, error: Int) {
+                    val errorMsg = when (error) {
+                        CameraDevice.StateCallback.ERROR_CAMERA_IN_USE -> "Camera in use"
+                        CameraDevice.StateCallback.ERROR_MAX_CAMERAS_IN_USE -> "Max cameras in use"
+                        CameraDevice.StateCallback.ERROR_CAMERA_DISABLED -> "Camera disabled"
+                        CameraDevice.StateCallback.ERROR_CAMERA_DEVICE -> "Camera device error"
+                        CameraDevice.StateCallback.ERROR_CAMERA_SERVICE -> "Camera service error"
+                        else -> "Unknown error ($error)"
                     }
-                }, backgroundHandler)
-            }
-
-            override fun onDisconnected(camera: CameraDevice) {
-                camera.close()
-                cameraDevice = null
-            }
-
-            override fun onError(camera: CameraDevice, error: Int) {
-                Log.e("CameraDebug", "Camera error: $error")
-                camera.close()
-                cameraDevice = null
-            }
-        }, backgroundHandler)
+                    Log.e("CameraDebug", "Camera error for ID $cameraId: $errorMsg")
+                    camera.close()
+                    cameraDevice = null
+//                    handleNoCameraAvailable("Camera error: $errorMsg")
+                }
+            }, backgroundHandler)
+        } catch (e: CameraAccessException) {
+            Log.e("CameraDebug", "Failed to open camera ID: $cameraId, reason: ${e.reason}", e)
+//            handleNoCameraAvailable("Camera access denied: ${e.reason}")
+        } catch (e: Exception) {
+            Log.e("CameraDebug", "Unexpected error opening camera ID: $cameraId", e)
+//            handleNoCameraAvailable("Unexpected error opening camera")
+        }
     }
+
+//    private fun handleNoCameraAvailable(reason: String) {
+//        runOnUiThread {
+//            Toast.makeText(this, "Cannot enable gesture recognition: $reason", Toast.LENGTH_LONG).show()
+//        }
+//        isGestureRecognitionEnabled = false
+//        cleanupCameraResources()
+//    }
 
     private fun showHomeFragments() {
         supportFragmentManager.beginTransaction()
@@ -517,16 +635,41 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         lightIcon.setImageResource(if (state) R.drawable.light_on else R.drawable.light_off)
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        timeUpdateHandler.removeCallbacks(timeUpdateRunnable)
-        scope.cancel()
-        model.close()
-        imageReader.close()
-        cameraDevice?.close()
-        captureSession?.close()
-        backgroundThread.quitSafely()
-    }
+//    override fun onDestroy() {
+//        super.onDestroy()
+//        // Stop camera capture and clean up resources
+//        try {
+//            captureSession?.stopRepeating()
+//            captureSession?.close()
+//            captureSession = null
+//        } catch (e: Exception) {
+//            Log.e("CameraDebug", "Error stopping capture session", e)
+//        }
+//        try {
+//            cameraDevice?.close()
+//            cameraDevice = null
+//        } catch (e: Exception) {
+//            Log.e("CameraDebug", "Error closing camera device", e)
+//        }
+//        try {
+//            imageReader.setOnImageAvailableListener(null, null) // Detach listener
+//            imageReader.close()
+//        } catch (e: Exception) {
+//            Log.e("CameraDebug", "Error closing image reader", e)
+//        }
+//        try {
+//            scope.cancel()
+//            model.close()
+//        } catch (e: Exception) {
+//            Log.e("Model", "Error closing model", e)
+//        }
+//        try {
+//            backgroundThread.quitSafely()
+//        } catch (e: Exception) {
+//            Log.e("CameraDebug", "Error quitting background thread", e)
+//        }
+//        timeUpdateHandler.removeCallbacks(timeUpdateRunnable)
+//    }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
