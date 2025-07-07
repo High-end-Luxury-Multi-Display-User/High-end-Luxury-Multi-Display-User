@@ -50,6 +50,8 @@ import kotlinx.coroutines.launch
 import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.support.image.ops.ResizeOp
+import java.io.BufferedReader
+import java.io.InputStreamReader
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -93,6 +95,25 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     private val iconRevertDelay = 3000L
     private val gestureDebounceTime = 1000L
     private lateinit var ic_volume:ImageView
+
+    private fun executeShellCommand(command: String): Pair<Boolean, String> {
+        try {
+            val process = Runtime.getRuntime().exec(command)
+            val output = BufferedReader(InputStreamReader(process.inputStream)).use { it.readText() }
+            val error = BufferedReader(InputStreamReader(process.errorStream)).use { it.readText() }
+            val exitCode = process.waitFor()
+            if (exitCode == 0) {
+                Log.i("SettingsFragment", "Executed shell command: $command, output: $output")
+                return Pair(true, output)
+            } else {
+                Log.e("SettingsFragment", "Shell command failed: $command, error: $error, exit code: $exitCode")
+                return Pair(false, error)
+            }
+        } catch (e: Exception) {
+            Log.e("SettingsFragment", "Failed to execute shell command: ${e.message}", e)
+            return Pair(false, e.message ?: "Unknown error")
+        }
+    }
 
     private var currentScreen = Screen.HOME // Track current screen state
     enum class Screen {
@@ -218,6 +239,30 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         checkCameraPermission()
 
         ic_volume.setOnClickListener{
+//            try {
+//                Runtime.getRuntime().exec(arrayOf("sh", "-c", "input keyevent 24"))
+//            } catch (e: Exception) {
+//                Log.e("VolumeControl", "Failed to execute keyevent", e)
+//            }
+//            audioManager.adjustStreamVolume(
+//                AudioManager.STREAM_MUSIC,
+//                AudioManager.ADJUST_RAISE,
+//                AudioManager.FLAG_SHOW_UI
+//            )
+            val overlayPackage = "com.example.lightmode"
+            val userId = 10
+            try {
+                val (success, output) = executeShellCommand("adb shell input keyevent 24")
+                if (success) {
+                    val enabled = output.lines().any { it.contains("[x] $overlayPackage") }
+                    Log.i("SettingsFragment", "Overlay state check: enabled=$enabled, output=$output")
+//                    return enabled
+                } else {
+                    Log.w("SettingsFragment", "Failed to check overlay state: $output")
+                }
+            } catch (e: Exception) {
+                Log.w("SettingsFragment", "Error checking overlay state: ${e.message}")
+            }
             audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
             updateVolumeIcon()
         }
@@ -281,7 +326,13 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
                                             ) {
                                                 when (it.label) {
                                                     "scrollup" -> {
-                                                        audioManager.adjustVolume(AudioManager.ADJUST_MUTE, AudioManager.FLAG_SHOW_UI)
+//                                                        try {
+//                                                            Runtime.getRuntime().exec(arrayOf("sh", "-c", "input keyevent 24"))
+//                                                        } catch (e: Exception) {
+//                                                            Log.e("VolumeControl", "Failed to execute keyevent", e)
+//                                                        }
+
+                                                        //audioManager.adjustVolume(AudioManager.ADJUST_MUTE, AudioManager.FLAG_SHOW_UI)
                                                         runOnUiThread {
                                                             Toast.makeText(this@MainActivity, "Mute", Toast.LENGTH_SHORT).show()
                                                             ic_volume.setImageResource(R.drawable.ic_mute)
