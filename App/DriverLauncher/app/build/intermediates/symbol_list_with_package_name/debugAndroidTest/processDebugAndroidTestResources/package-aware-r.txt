@@ -1,3 +1,0 @@
-com.example.driverlauncher.test
-style WhiteBackgroundDialogTheme
-style WhiteBackgroundTheme

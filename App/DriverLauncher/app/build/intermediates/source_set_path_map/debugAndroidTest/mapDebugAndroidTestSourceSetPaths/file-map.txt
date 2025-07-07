@@ -1,6 +1,0 @@
-com.example.driverlauncher.test.app-tracing-1.2.0-0 /home/fatma/.gradle/caches/8.11.1/transforms/6e79e763f2cda2dd173f711c05a627cd/transformed/tracing-1.2.0/res
-com.example.driverlauncher.test.app-core-1.6.1-1 /home/fatma/.gradle/caches/8.11.1/transforms/864ac222666f35c852c48809c1405311/transformed/core-1.6.1/res
-com.example.driverlauncher.test.app-androidTest-2 /home/fatma/High-end-Luxury-Multi-Display-User/App/DriverLauncher/app/build/generated/res/resValues/androidTest/debug
-com.example.driverlauncher.test.app-mergeDebugAndroidTestResources-3 /home/fatma/High-end-Luxury-Multi-Display-User/App/DriverLauncher/app/build/intermediates/incremental/debugAndroidTest/mergeDebugAndroidTestResources/merged.dir
-com.example.driverlauncher.test.app-mergeDebugAndroidTestResources-4 /home/fatma/High-end-Luxury-Multi-Display-User/App/DriverLauncher/app/build/intermediates/incremental/debugAndroidTest/mergeDebugAndroidTestResources/stripped.dir
-com.example.driverlauncher.test.app-debugAndroidTest-5 /home/fatma/High-end-Luxury-Multi-Display-User/App/DriverLauncher/app/build/intermediates/merged_res/debugAndroidTest/mergeDebugAndroidTestResources

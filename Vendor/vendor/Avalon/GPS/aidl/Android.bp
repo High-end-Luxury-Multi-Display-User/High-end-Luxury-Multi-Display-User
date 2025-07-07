@@ -1,0 +1,11 @@
+aidl_interface {
+    name: "com.example.driverlauncher",
+    srcs: ["com/example/driverlauncher/IGpsService.aidl"],
+    stability: "vintf",
+    backend: {
+        ndk: {
+            enabled: true,
+        },
+    },
+    vendor_available: true,
+}
