@@ -2,6 +2,8 @@ package com.example.driverlauncher
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.car.Car
+import android.car.hardware.property.CarPropertyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -67,10 +69,10 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     private var eyeDetectionService: EyeDetectionService? = null
      var isBoundEye = true
      var isEyeDetectionEnabled = false
-//    private val VENDOR_EXTENSION_LIGHT_CONTROL_PROPERTY: Int = 0x21400106
-//    private val areaID = 0
-//    private lateinit var car: Car
-//    private lateinit var carPropertyManager: CarPropertyManager
+    private val VENDOR_EXTENSION_LIGHT_CONTROL_PROPERTY: Int = 0x21400106
+    private val areaID = 0
+    private lateinit var car: Car
+    private lateinit var carPropertyManager: CarPropertyManager
     private var ledState = false // false = off, true = on
     private lateinit var lightIcon: ImageView
     private lateinit var timeTextView: TextView
@@ -156,14 +158,14 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         carVitalsIcon = findViewById(R.id.icon_car_vitals)
         settingsIcon = findViewById(R.id.icon_settings)
 
-        // Initialize Car API
-//        car = Car.createCar(this.applicationContext)
-//        if (car == null) {
-//            Log.e("LED", "Failed to create Car instance")
-//        } else {
-//            carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
-//            Log.d("LED", "CarPropertyManager initialized")
-//        }
+       //  Initialize Car API
+        car = Car.createCar(this.applicationContext)
+        if (car == null) {
+            Log.e("LED", "Failed to create Car instance")
+        } else {
+            carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
+            Log.d("LED", "CarPropertyManager initialized")
+        }
 
         // Set up light button
         val lightButton = findViewById<LinearLayout>(R.id.light_button)
@@ -543,15 +545,15 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     private fun setLedState(state: Boolean) {
         val value = if (state) 1 else 0
         try {
-//            synchronized(carPropertyManager) {
-//                carPropertyManager.setProperty(
-//                    Integer::class.java,
-//                    VENDOR_EXTENSION_LIGHT_CONTROL_PROPERTY,
-//                    areaID,
-//                    Integer(value)
-//                )
-//                Log.d("LED", "LED state set to: $value")
-//            }
+            synchronized(carPropertyManager) {
+                carPropertyManager.setProperty(
+                    Integer::class.java,
+                    VENDOR_EXTENSION_LIGHT_CONTROL_PROPERTY,
+                    areaID,
+                    Integer(value)
+                )
+                Log.d("LED", "LED state set to: $value")
+            }
         } catch (e: Exception) {
             Log.e("LED", "Failed to set LED state", e)
         }
