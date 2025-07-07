@@ -23,6 +23,9 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 
 class SettingsFragment : Fragment() {
+
+    lateinit var themeImage : ImageButton
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -34,16 +37,16 @@ class SettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        Log.i("TAG", "onViewCreated: SettingsFragment")
+
         // Theme Switch
         val themeContainer = view.findViewById<LinearLayout>(R.id.theme_container)
-        val themeImage = view.findViewById<ImageButton>(R.id.theme_image)
+        themeImage = view.findViewById(R.id.theme_image)
         themeContainer.setOnClickListener @RequiresPermission(Manifest.permission.KILL_BACKGROUND_PROCESSES) {
-            toggleImage(themeImage, R.drawable.day, R.drawable.night)
-            toggleOverlayTheme(themeImage)
+            toggleOverlayTheme()
         }
         themeImage.setOnClickListener @RequiresPermission(Manifest.permission.KILL_BACKGROUND_PROCESSES) {
-            toggleImage(themeImage, R.drawable.day, R.drawable.night)
-            toggleOverlayTheme(themeImage)
+            toggleOverlayTheme()
         }
 
         // Gesture Control Switch
@@ -71,6 +74,7 @@ class SettingsFragment : Fragment() {
         updateThemeImage(themeImage)
     }
 
+    @SuppressLint("UseCompatLoadingForDrawables")
     private fun toggleImage(imageButton: ImageButton, offResource: Int, onResource: Int) {
         Log.i("SettingsFragment", "toggleImage: current=${imageButton.drawable.constantState}, off=$offResource, on=$onResource")
         if (imageButton.drawable.constantState == resources.getDrawable(offResource, null).constantState) {
@@ -101,8 +105,52 @@ class SettingsFragment : Fragment() {
 
     @RequiresPermission(Manifest.permission.KILL_BACKGROUND_PROCESSES)
     @SuppressLint("UseCompatLoadingForDrawables")
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    private fun toggleOverlayTheme(themeImage: ImageButton) {
+    fun toggleOverlayTheme() {
+        setOverlayTheme(!isOverlayEnabled())
+//        val overlayPackage = "com.example.lightmode"
+//        val targetPackage = "com.example.driverlauncher"
+//        val userId = 10 // User 10, as specified
+//
+//        try {
+//            // Determine current state
+//            val isOverlayEnabled = isOverlayEnabled()
+//            val newState = !isOverlayEnabled
+//
+//            Log.i("SettingsFragment", "Overlay $overlayPackage current state: enabled=$isOverlayEnabled, toggling to enabled=$newState")
+//
+//            // Execute shell command to toggle overlay
+//            val command = "cmd overlay ${if (newState) "enable" else "disable"} --user $userId $overlayPackage"
+//            val (success, output) = executeShellCommand(command)
+//            if (!success) {
+//                throw IllegalStateException("Shell command failed: $output")
+//            }
+//
+//            Log.i("SettingsFragment", "Overlay $overlayPackage set to enabled=$newState")
+//
+//            // Update the theme image to reflect the new state
+//            themeImage.setImageResource(if (newState) R.drawable.night else R.drawable.day)
+//
+//            // Restart the target app to apply the overlay
+//            restartTargetApp(requireContext(), targetPackage)
+//
+//            // Show user feedback
+//            Toast.makeText(requireContext(), "Theme ${if (newState) "enabled" else "disabled"}", Toast.LENGTH_SHORT).show()
+//
+//        } catch (e: SecurityException) {
+//            Log.e("SettingsFragment", "Permission denied: Ensure app is a system app with CHANGE_OVERLAY_PACKAGES permission", e)
+//            Toast.makeText(requireContext(), "Permission denied: App must be a system app", Toast.LENGTH_LONG).show()
+//        } catch (e: IllegalStateException) {
+//            Log.e("SettingsFragment", "Overlay $overlayPackage not found or invalid: ${e.message}", e)
+//            Toast.makeText(requireContext(), "Overlay not found or invalid", Toast.LENGTH_LONG).show()
+//        } catch (e: Exception) {
+//            Log.e("SettingsFragment", "Failed to toggle overlay $overlayPackage: ${e.message}", e)
+//            Toast.makeText(requireContext(), "Failed to toggle theme", Toast.LENGTH_LONG).show()
+//        }
+    }
+
+    @RequiresPermission(Manifest.permission.KILL_BACKGROUND_PROCESSES)
+    @SuppressLint("UseCompatLoadingForDrawables")
+    fun setOverlayTheme(enable: Boolean) {
         val overlayPackage = "com.example.lightmode"
         val targetPackage = "com.example.driverlauncher"
         val userId = 10 // User 10, as specified
@@ -110,27 +158,30 @@ class SettingsFragment : Fragment() {
         try {
             // Determine current state
             val isOverlayEnabled = isOverlayEnabled()
-            val newState = !isOverlayEnabled
+            Log.i("SettingsFragment", "Overlay $overlayPackage current state: enabled=$isOverlayEnabled, setting to enabled=$enable")
 
-            Log.i("SettingsFragment", "Overlay $overlayPackage current state: enabled=$isOverlayEnabled, toggling to enabled=$newState")
+            // Only execute if state needs to change
+            if (isOverlayEnabled != enable) {
+                // Execute shell command to toggle overlay
+                val command = "cmd overlay ${if (enable) "enable" else "disable"} --user $userId $overlayPackage"
+                val (success, output) = executeShellCommand(command)
+                if (!success) {
+                    throw IllegalStateException("Shell command failed: $output")
+                }
 
-            // Execute shell command to toggle overlay
-            val command = "cmd overlay ${if (newState) "enable" else "disable"} --user $userId $overlayPackage"
-            val (success, output) = executeShellCommand(command)
-            if (!success) {
-                throw IllegalStateException("Shell command failed: $output")
+                Log.i("SettingsFragment", "Overlay $overlayPackage set to enabled=$enable")
+
+                // Update the theme image to reflect the new state
+                themeImage.setImageResource(if (enable) R.drawable.night else R.drawable.day)
+
+                // Restart the target app to apply the overlay
+                restartTargetApp(requireContext(), targetPackage)
+            } else {
+                Log.i("SettingsFragment", "Overlay $overlayPackage already in desired state: enabled=$enable")
             }
 
-            Log.i("SettingsFragment", "Overlay $overlayPackage set to enabled=$newState")
-
-            // Update the theme image to reflect the new state
-            themeImage.setImageResource(if (newState) R.drawable.night else R.drawable.day)
-
-            // Restart the target app to apply the overlay
-            restartTargetApp(requireContext(), targetPackage)
-
             // Show user feedback
-            Toast.makeText(requireContext(), "Theme ${if (newState) "enabled" else "disabled"}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Theme ${if (enable) "enabled" else "disabled"}", Toast.LENGTH_SHORT).show()
 
         } catch (e: SecurityException) {
             Log.e("SettingsFragment", "Permission denied: Ensure app is a system app with CHANGE_OVERLAY_PACKAGES permission", e)
@@ -139,12 +190,13 @@ class SettingsFragment : Fragment() {
             Log.e("SettingsFragment", "Overlay $overlayPackage not found or invalid: ${e.message}", e)
             Toast.makeText(requireContext(), "Overlay not found or invalid", Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
-            Log.e("SettingsFragment", "Failed to toggle overlay $overlayPackage: ${e.message}", e)
-            Toast.makeText(requireContext(), "Failed to toggle theme", Toast.LENGTH_LONG).show()
+            Log.e("SettingsFragment", "Failed to set overlay $overlayPackage: ${e.message}", e)
+            Toast.makeText(requireContext(), "Failed to set theme", Toast.LENGTH_LONG).show()
         }
     }
 
-    private fun isOverlayEnabled(): Boolean {
+    @SuppressLint("UseCompatLoadingForDrawables")
+    fun isOverlayEnabled(): Boolean {
         val overlayPackage = "com.example.lightmode"
         val userId = 10
         try {
