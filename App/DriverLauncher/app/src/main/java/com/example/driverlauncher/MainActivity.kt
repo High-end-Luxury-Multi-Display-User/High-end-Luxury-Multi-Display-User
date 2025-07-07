@@ -72,6 +72,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     private var ledState = false // false = off, true = on
     private lateinit var lightIcon: ImageView
     private lateinit var timeTextView: TextView
+    private lateinit var drowsinessStatusIcon: ImageView
     private val timeUpdateHandler = Handler(Looper.getMainLooper())
     private lateinit var timeUpdateRunnable: Runnable
     private lateinit var homeIcon: ImageView
@@ -140,7 +141,9 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         /********************************************/
         // Initialize AudioManager
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-
+        // Drawsiness Icon
+        drowsinessStatusIcon = findViewById(R.id.drowsinessStatusIcon)
+        drowsinessStatusIcon.setImageResource(R.drawable.eye_disabled)
         // Initialize views
         lightIcon = findViewById(R.id.light_icon)
         timeTextView = findViewById(R.id.time) ?: run {
@@ -677,7 +680,20 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     override fun onResultReceived(status: String) {
         Log.d(TAG, "Result received: $status")
 
+        runOnUiThread {
+            if (isEyeDetectionEnabled) {
+                when (status.lowercase(Locale.ROOT)) {
+                    "open" -> drowsinessStatusIcon.setImageResource(R.drawable.ic_drowsiness)
+                    "closed" -> drowsinessStatusIcon.setImageResource(R.drawable.eye_closed)
+                    else -> drowsinessStatusIcon.setImageResource(R.drawable.eye_enabled)
+                }
+            } else {
+                drowsinessStatusIcon.setImageResource(R.drawable.eye_disabled)
+            }
+        }
     }
+
+
 
     override fun onErrorReceived(error: String) {
         Log.e(TAG, "Error received: $error")
@@ -690,10 +706,20 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     override fun onStatusReceived(isEnabled: Boolean) {
         Log.d(TAG, "Status received: isEnabled=$isEnabled")
         isEyeDetectionEnabled = isEnabled
+
+        if (!isFinishing && !isDestroyed) {
+            runOnUiThread {
+                drowsinessStatusIcon.setImageResource(
+                    if (isEnabled) R.drawable.eye_enabled else R.drawable.eye_disabled
+                )
+            }
+        }
+
+
         val settingsFragment = supportFragmentManager.findFragmentById(R.id.settingsFragmentContainer)
         if (settingsFragment is SettingsFragment) {
             settingsFragment.updateDrowsinessIcon(isEnabled)
         }
-
     }
+
 }
