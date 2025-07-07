@@ -112,7 +112,7 @@
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/language_container"
+            android:id="@+id/drawsiness_container"
             android:layout_width="match_parent"
             android:layout_height="60dp"
             android:orientation="horizontal"
@@ -126,19 +126,19 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Language"
+                android:text="Drawsiness"
                 android:textSize="28sp"
                 android:textColor="@color/white"
                 android:layout_marginStart="60dp"/>
 
             <ImageButton
-                android:id="@+id/language_image"
+                android:id="@+id/drawsiness_image"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:background="#00000000"
                 android:scaleType="centerCrop"
                 android:layout_marginEnd="75dp"
-                android:src="@drawable/english" />
+                android:src="@drawable/eye_disabled" />
 
         </LinearLayout>
     </LinearLayout>

@@ -1,0 +1,6 @@
+android.vendor.cameratest.test.app-tracing-1.2.0-0 /home/fatma/.gradle/caches/8.11.1/transforms/62f38476e635356adae56e08108f40ad/transformed/tracing-1.2.0/res
+android.vendor.cameratest.test.app-core-1.6.1-1 /home/fatma/.gradle/caches/8.11.1/transforms/8ebaf9442946bff5dfd564db9300c9e8/transformed/core-1.6.1/res
+android.vendor.cameratest.test.app-androidTest-2 /home/fatma/AndroidStudioProjects/CameraTest/app/build/generated/res/resValues/androidTest/debug
+android.vendor.cameratest.test.app-mergeDebugAndroidTestResources-3 /home/fatma/AndroidStudioProjects/CameraTest/app/build/intermediates/incremental/debugAndroidTest/mergeDebugAndroidTestResources/merged.dir
+android.vendor.cameratest.test.app-mergeDebugAndroidTestResources-4 /home/fatma/AndroidStudioProjects/CameraTest/app/build/intermediates/incremental/debugAndroidTest/mergeDebugAndroidTestResources/stripped.dir
+android.vendor.cameratest.test.app-debugAndroidTest-5 /home/fatma/AndroidStudioProjects/CameraTest/app/build/intermediates/merged_res/debugAndroidTest/mergeDebugAndroidTestResources

@@ -121,16 +121,16 @@ class DashboardFragment : Fragment() {
         speedView.speedTo(speed, 1000)
 
         lastSpeed?.let { previous ->
-            val delta = kotlin.math.abs(speed - previous)
-            if (delta <= 5f) {
+//            val delta = kotlin.math.abs(speed - previous)
+            if (speed >= 5f) {
                 if (videoView.isPlaying) {
                     videoView.pause()
-                    Log.d("VIDEO", "Paused video because speed change Δ=$delta km/h")
+                    Log.d("VIDEO", "Paused video because speed change Δ=$speed km/h")
                 }
             } else {
                 if (!videoView.isPlaying) {
                     videoView.start()
-                    Log.d("VIDEO", "Started video because speed change Δ=$delta km/h")
+                    Log.d("VIDEO", "Started video because speed change Δ=$speed km/h")
                 }
             }
         }
