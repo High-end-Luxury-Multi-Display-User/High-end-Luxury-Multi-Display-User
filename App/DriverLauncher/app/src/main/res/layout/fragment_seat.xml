@@ -5,7 +5,7 @@
     android:id="@+id/seatFragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/black_background"
+    android:background="@drawable/bg_whole_background"
     android:padding="16dp">
 
     <LinearLayout
@@ -22,7 +22,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:text="SEAT"
-            android:textColor="@color/white"
+            android:textColor="@color/time"
             android:textSize="28sp"
             android:textStyle="bold" />
 
@@ -32,7 +32,7 @@
             android:layout_height="wrap_content"
             android:text="ADJUSTMENT"
             android:textSize="20sp"
-            android:textColor="@color/white"
+            android:textColor="@color/time"
             android:textStyle="bold"
             android:layout_marginBottom="4dp" />
 
@@ -138,7 +138,7 @@
                 android:layout_marginStart="64dp"
                 android:layout_marginTop="40dp"
                 android:text="70°"
-                android:textColor="@color/white"
+                android:textColor="@color/time"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 app:layout_constraintStart_toStartOf="parent"

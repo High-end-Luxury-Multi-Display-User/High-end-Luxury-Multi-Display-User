@@ -29,6 +29,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
 import com.example.driverlauncher.carvitals.BatteryFragment
 import com.example.driverlauncher.carvitals.CarVitalsFragment
 import com.example.driverlauncher.carvitals.SeatFragment
@@ -451,18 +453,23 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     }
 
     private fun showSettingsFragment() {
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.settingsFragmentContainer, SettingsFragment())
-            .commit()
-        currentScreen = Screen.SETTINGS
+        try {
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.settingsFragmentContainer, SettingsFragment())
+                .commitNow() // Use commitNow to ensure synchronous commit
+            currentScreen = Screen.SETTINGS
 
-        findViewById<FrameLayout>(R.id.navigation_container)?.visibility = View.GONE
-        findViewById<FrameLayout>(R.id.dashboard_container)?.visibility = View.GONE
-        findViewById<FrameLayout>(R.id.batteryContainer)?.visibility = View.GONE
-        findViewById<FrameLayout>(R.id.mainFragmentContainer)?.visibility = View.GONE
-        findViewById<FrameLayout>(R.id.rightFragmentContainer)?.visibility = View.GONE
-
-        findViewById<FrameLayout>(R.id.settingsFragmentContainer)?.visibility = View.VISIBLE
+            // Update visibility of containers
+            findViewById<FrameLayout>(R.id.navigation_container)?.visibility = View.GONE
+            findViewById<FrameLayout>(R.id.dashboard_container)?.visibility = View.GONE
+            findViewById<FrameLayout>(R.id.batteryContainer)?.visibility = View.GONE
+            findViewById<FrameLayout>(R.id.mainFragmentContainer)?.visibility = View.GONE
+            findViewById<FrameLayout>(R.id.rightFragmentContainer)?.visibility = View.GONE
+            findViewById<FrameLayout>(R.id.settingsFragmentContainer)?.visibility = View.VISIBLE
+        } catch (e: IllegalStateException) {
+            Log.e("MainActivity", "Fragment transaction failed: ${e.message}", e)
+            Toast.makeText(this, "Failed to load settings screen", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun updateIconStates() {
@@ -605,14 +612,6 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
                 updateLightIcon(false)
                 setLedState(false)
                 playAudio(R.raw.lightoff)
-            }
-            "light_mode" -> {
-                // change to light mode
-                playAudio(R.raw.day)
-            }
-            "night_mode" -> {
-                // change to dark mode
-                playAudio(R.raw.night)
             }
             "seat_front" -> {
                 // adjust seat position 3
