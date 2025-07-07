@@ -116,7 +116,7 @@ class SettingsFragment : Fragment() {
         val current = imageButton.drawable?.constantState
         val off = resources.getDrawable(offResource, null).constantState
         imageButton.setImageResource(if (current == off) onResource else offResource)
-         Log.i("SettingsFragment", "toggleImage: current=${imageButton.drawable.constantState}, off=$offResource, on=$onResource"
+         Log.i("SettingsFragment", "toggleImage: current=${imageButton.drawable.constantState}, off=$offResource, on=$onResource")
     }
 
     // Update from inside or outside
@@ -147,7 +147,7 @@ class SettingsFragment : Fragment() {
          view?.findViewById<ImageButton>(R.id.theme_image)?.let { updateThemeImage(it) }
       // Update drowsiness icon from actual state
         val mainActivity = activity as? MainActivity
-        updateDrowsinessIcon(mainActivity?.isEyeDetectionEnabled ?: false    
+        updateDrowsinessIcon(mainActivity?.isEyeDetectionEnabled ?: false)
     }
 
     @RequiresPermission(Manifest.permission.KILL_BACKGROUND_PROCESSES)
