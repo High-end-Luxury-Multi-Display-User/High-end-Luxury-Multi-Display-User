@@ -85,7 +85,6 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     private lateinit var audioManager: AudioManager
     private var lastGestureTime = 0L
     private val gestureDebounceTime = 500L // 1 second debounce
-    private var isDarkTheme = true
 
     private var currentScreen = Screen.HOME // Track current screen state
     enum class Screen {
@@ -203,11 +202,11 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         timeUpdateHandler.postDelayed(timeUpdateRunnable, 60000)
 
         // Camera Model
-//        model = ModelMetadata.newInstance(this)
-//        imageProcessor = ImageProcessor.Builder()
-//            .add(ResizeOp(224, 224, ResizeOp.ResizeMethod.BILINEAR))
-//            .build()
-//        checkCameraPermission()
+        model = ModelMetadata.newInstance(this)
+        imageProcessor = ImageProcessor.Builder()
+            .add(ResizeOp(224, 224, ResizeOp.ResizeMethod.BILINEAR))
+            .build()
+        checkCameraPermission()
     }
 
     private fun checkCameraPermission() {

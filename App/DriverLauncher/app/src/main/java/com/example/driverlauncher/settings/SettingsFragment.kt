@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -77,10 +78,15 @@ class SettingsFragment : Fragment() {
     @SuppressLint("UseCompatLoadingForDrawables")
     private fun toggleImage(imageButton: ImageButton, offResource: Int, onResource: Int) {
         Log.i("SettingsFragment", "toggleImage: current=${imageButton.drawable.constantState}, off=$offResource, on=$onResource")
-        if (imageButton.drawable.constantState == resources.getDrawable(offResource, null).constantState) {
-            imageButton.setImageResource(onResource)
-        } else {
-            imageButton.setImageResource(offResource)
+
+        // Language Switch
+        val languageContainer = view.findViewById<LinearLayout>(R.id.language_container)
+        val languageImage = view.findViewById<ImageButton>(R.id.language_image)
+        languageContainer.setOnClickListener {
+            toggleImage(languageImage, R.drawable.english, R.drawable.arabic)
+        }
+        languageImage.setOnClickListener {
+            toggleImage(languageImage, R.drawable.english, R.drawable.arabic)
         }
     }
 
@@ -107,45 +113,6 @@ class SettingsFragment : Fragment() {
     @SuppressLint("UseCompatLoadingForDrawables")
     fun toggleOverlayTheme() {
         setOverlayTheme(!isOverlayEnabled())
-//        val overlayPackage = "com.example.lightmode"
-//        val targetPackage = "com.example.driverlauncher"
-//        val userId = 10 // User 10, as specified
-//
-//        try {
-//            // Determine current state
-//            val isOverlayEnabled = isOverlayEnabled()
-//            val newState = !isOverlayEnabled
-//
-//            Log.i("SettingsFragment", "Overlay $overlayPackage current state: enabled=$isOverlayEnabled, toggling to enabled=$newState")
-//
-//            // Execute shell command to toggle overlay
-//            val command = "cmd overlay ${if (newState) "enable" else "disable"} --user $userId $overlayPackage"
-//            val (success, output) = executeShellCommand(command)
-//            if (!success) {
-//                throw IllegalStateException("Shell command failed: $output")
-//            }
-//
-//            Log.i("SettingsFragment", "Overlay $overlayPackage set to enabled=$newState")
-//
-//            // Update the theme image to reflect the new state
-//            themeImage.setImageResource(if (newState) R.drawable.night else R.drawable.day)
-//
-//            // Restart the target app to apply the overlay
-//            restartTargetApp(requireContext(), targetPackage)
-//
-//            // Show user feedback
-//            Toast.makeText(requireContext(), "Theme ${if (newState) "enabled" else "disabled"}", Toast.LENGTH_SHORT).show()
-//
-//        } catch (e: SecurityException) {
-//            Log.e("SettingsFragment", "Permission denied: Ensure app is a system app with CHANGE_OVERLAY_PACKAGES permission", e)
-//            Toast.makeText(requireContext(), "Permission denied: App must be a system app", Toast.LENGTH_LONG).show()
-//        } catch (e: IllegalStateException) {
-//            Log.e("SettingsFragment", "Overlay $overlayPackage not found or invalid: ${e.message}", e)
-//            Toast.makeText(requireContext(), "Overlay not found or invalid", Toast.LENGTH_LONG).show()
-//        } catch (e: Exception) {
-//            Log.e("SettingsFragment", "Failed to toggle overlay $overlayPackage: ${e.message}", e)
-//            Toast.makeText(requireContext(), "Failed to toggle theme", Toast.LENGTH_LONG).show()
-//        }
     }
 
     @RequiresPermission(Manifest.permission.KILL_BACKGROUND_PROCESSES)
@@ -275,5 +242,8 @@ class SettingsFragment : Fragment() {
             Log.e("SettingsFragment", "Failed to restart System UI: ${e.message}", e)
             Toast.makeText(context, "Failed to restart System UI", Toast.LENGTH_LONG).show()
         }
+    override fun onResume() {
+        super.onResume()
+        updateVoiceImage()
     }
 }
