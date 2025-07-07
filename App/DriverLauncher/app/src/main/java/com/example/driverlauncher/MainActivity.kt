@@ -31,13 +31,16 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
 import com.example.driverlauncher.carvitals.BatteryFragment
 import com.example.driverlauncher.carvitals.CarVitalsFragment
 import com.example.driverlauncher.carvitals.SeatFragment
+import com.example.driverlauncher.drawsiness.EyeDetectionService
 import com.example.driverlauncher.handgesture.YuvToRgbConverter
 import com.example.driverlauncher.home.DashboardFragment
 import com.example.driverlauncher.home.NavigationFragment
-import com.example.driverlauncher.ml.ModelMetadata
+
 import com.example.driverlauncher.settings.SettingsFragment
 import com.example.driverlauncher.voskva.VoskRecognitionService
 import kotlinx.coroutines.CoroutineScope
@@ -50,26 +53,36 @@ import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.support.image.ops.ResizeOp
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import org.tensorflow.lite.support.metadata.schema.ModelMetadata
 import java.text.SimpleDateFormat
 import java.util.*
 import java.lang.reflect.Method
 
-class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCallback {
+class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCallback ,EyeDetectionService.DetectionCallback{
     companion object {
         const val PERMISSIONS_REQUEST_RECORD_AUDIO = 1
         var isServiceRunning = false
         var voskService: VoskRecognitionService? = null
         var isBound = false
         var lastCommand = ""
+        private const val TAG = "MainActivity"
+        private const val PERMISSIONS_REQUEST_CAMERA = 100
     }
-//    private val VENDOR_EXTENSION_LIGHT_CONTROL_PROPERTY: Int = 0x21400106
-//    private val areaID = 0
-//    private lateinit var car: Car
-//    private lateinit var carPropertyManager: CarPropertyManager
+
     private var isModelClosed = false // Track model state
+
+    private var isDestroyed = false
+    private var eyeDetectionService: EyeDetectionService? = null
+     var isBoundEye = true
+     var isEyeDetectionEnabled = false
+    private val VENDOR_EXTENSION_LIGHT_CONTROL_PROPERTY: Int = 0x21400106
+    private val areaID = 0
+    private lateinit var car: Car
+    private lateinit var carPropertyManager: CarPropertyManager
     private var ledState = false // false = off, true = on
     private lateinit var lightIcon: ImageView
     private lateinit var timeTextView: TextView
+    private lateinit var drowsinessStatusIcon: ImageView
     private val timeUpdateHandler = Handler(Looper.getMainLooper())
     private lateinit var timeUpdateRunnable: Runnable
     private lateinit var homeIcon: ImageView
@@ -135,28 +148,29 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
             return false
         }
     }
-//    private fun executeShellCommand(command: String): Pair<Boolean, String> {
-//        try {
-//            val process = Runtime.getRuntime().exec(command)
-//            val output = BufferedReader(InputStreamReader(process.inputStream)).use { it.readText() }
-//            val error = BufferedReader(InputStreamReader(process.errorStream)).use { it.readText() }
-//            val exitCode = process.waitFor()
-//            if (exitCode == 0) {
-//                Log.i("ExecCommand", "Executed shell command: $command, output: $output")
-//                return Pair(true, output)
-//            } else {
-//                Log.e("ExecCommand", "Shell command failed: $command, error: $error, exit code: $exitCode")
-//                return Pair(false, error)
-//            }
-//        } catch (e: Exception) {
-//            Log.e("ExecCommand", "Failed to execute shell command: ${e.message}", e)
-//            return Pair(false, e.message ?: "Unknown error")
-//        }
-//    }
 
     private var currentScreen = Screen.HOME // Track current screen state
     enum class Screen {
         HOME, CAR_VITALS, SETTINGS
+    }
+    private val serviceConnectionEye = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            Log.d(TAG, "Eye Service connected")
+            val binder = service as EyeDetectionService.LocalBinder
+            eyeDetectionService = binder.getService().apply {
+                setDetectionCallback(this@MainActivity)
+            }
+
+            isBoundEye = true
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            Log.d(TAG, "Eye Service disconnected")
+            isBoundEye = false
+            eyeDetectionService = null
+            isEyeDetectionEnabled = false
+
+        }
     }
 
     private val serviceConnection = object : ServiceConnection {
@@ -186,7 +200,9 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         /********************************************/
         // Initialize AudioManager
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-
+        // Drawsiness Icon
+        drowsinessStatusIcon = findViewById(R.id.drowsinessStatusIcon)
+        drowsinessStatusIcon.setImageResource(R.drawable.eye_disabled)
         // Initialize views
         lightIcon = findViewById(R.id.light_icon)
         ic_volume = findViewById(R.id.ic_volume)
@@ -198,14 +214,14 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         carVitalsIcon = findViewById(R.id.icon_car_vitals)
         settingsIcon = findViewById(R.id.icon_settings)
 
-        // Initialize Car API
-//        car = Car.createCar(this.applicationContext)
-//        if (car == null) {
-//            Log.e("LED", "Failed to create Car instance")
-//        } else {
-//            carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
-//            Log.d("LED", "CarPropertyManager initialized")
-//        }
+       //  Initialize Car API
+        car = Car.createCar(this.applicationContext)
+        if (car == null) {
+            Log.e("LED", "Failed to create Car instance")
+        } else {
+            carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
+            Log.d("LED", "CarPropertyManager initialized")
+        }
 
         // Set up light button
         val lightButton = findViewById<LinearLayout>(R.id.light_button)
@@ -271,41 +287,12 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         updateTime()
         timeUpdateHandler.postDelayed(timeUpdateRunnable, 60000)
 
-        // Camera Model
+        // Camera Gesture Model
         model = ModelMetadata.newInstance(this)
         imageProcessor = ImageProcessor.Builder()
             .add(ResizeOp(224, 224, ResizeOp.ResizeMethod.BILINEAR))
             .build()
         checkCameraPermission()
-
-//        ic_volume.setOnClickListener{
-//            try {
-//                Runtime.getRuntime().exec(arrayOf("sh", "-c", "input keyevent 24"))
-//            } catch (e: Exception) {
-//                Log.e("VolumeControl", "Failed to execute keyevent", e)
-//            }
-//            audioManager.adjustStreamVolume(
-//                AudioManager.STREAM_MUSIC,
-//                AudioManager.ADJUST_RAISE,
-//                AudioManager.FLAG_SHOW_UI
-//            )
-//            val audio = "com.example.driverlauncher"
-//            val userId = 10
-//            try {
-//                val (success, output) = executeShellCommand("adb shell input keyevent 24")
-//                if (success) {
-//                    val enabled = output.lines().any { it.contains("[x] $audio") }
-//                    Log.i("ExecCommand", "Overlay state check: enabled=$enabled, output=$output")
-////                    return enabled
-//                } else {
-//                    Log.w("ExecCommand", "Failed to check overlay state: $output")
-//                }
-//            } catch (e: Exception) {
-//                Log.w("ExecCommand", "Error checking overlay state: ${e.message}")
-//            }
-//            audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
-//            updateVolumeIcon()
-//        }
 
         ic_volume.setOnClickListener {
             val success = executeCommandViaReflection("input keyevent 24")
@@ -321,7 +308,19 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
             executeShellCommand("input keyevent 24")
         }
 
+        /***************Drawsiness**************/
+        startServiceOnlyOnce()
 
+        // Request camera permission
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            Log.d(TAG, "Requesting camera permission")
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), PERMISSIONS_REQUEST_CAMERA)
+        } else {
+            Log.d(TAG, "Camera permission already granted")
+            bindService()
+        }
+
+        /******************UserPicker&UserName**********/
         val userContainer = findViewById<LinearLayout>(R.id.driver_profile)
             ?: throw IllegalStateException("Missing user_container")
         userContainer.setOnClickListener {
@@ -415,6 +414,48 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         }
     }
 
+    private fun bindService() {
+        if (isDestroyed) return
+        Log.d(TAG, "Binding to service")
+        bindService(Intent(this, EyeDetectionService::class.java), serviceConnectionEye, Context.BIND_AUTO_CREATE)
+    }
+
+    fun toggleEyeService(): Boolean {
+        val intent = Intent(this, EyeDetectionService::class.java).apply {
+            action = if (isEyeDetectionEnabled) {
+                EyeDetectionService.ACTION_STOP_DETECTION
+            } else {
+                EyeDetectionService.ACTION_START_DETECTION
+            }
+        }
+        startService(intent)
+
+        // Only update callback if service is bound
+        if (isBoundEye && eyeDetectionService != null) {
+            if (isEyeDetectionEnabled) {
+                eyeDetectionService?.setDetectionCallback(null)
+            } else {
+                eyeDetectionService?.setDetectionCallback(this)
+            }
+        } else {
+            Log.w(TAG, "toggleEyeService: EyeDetectionService not yet bound")
+        }
+
+        isEyeDetectionEnabled = !isEyeDetectionEnabled
+
+        // Update dashboard icon immediately
+        runOnUiThread {
+            drowsinessStatusIcon.setImageResource(
+                if (isEyeDetectionEnabled) R.drawable.eye_enabled else R.drawable.eye_disabled
+            )
+        }
+
+        return isEyeDetectionEnabled
+    }
+
+    private fun updateToggleButton() {
+        Log.d(TAG, "Updating toggle button: isEnabled=$isEyeDetectionEnabled")
+    }
     private fun checkCameraPermission() {
         if (ContextCompat.checkSelfPermission(
                 this,
@@ -427,15 +468,15 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
                 CAMERA_PERMISSION_CODE
             )
         } else {
-            setupCamera()
+//            setupCamera()
         }
     }
 
-    private fun setupCamera() {
-        startBackgroundThread()
-        setupImageReader()
-        openCamera()
-    }
+//    private fun setupCamera() {
+//        startBackgroundThread()
+//        setupImageReader()
+//        openCamera()
+//    }
 
     private fun startBackgroundThread() {
         backgroundThread = HandlerThread("CameraBackgroundThread")
@@ -543,6 +584,65 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         }, backgroundHandler)
     }
 
+//    private fun setupImageReader() {
+//        imageReader = ImageReader.newInstance(640, 480, android.graphics.ImageFormat.YUV_420_888, 2)
+//        imageReader.setOnImageAvailableListener({ reader ->
+//            val image = reader.acquireLatestImage() ?: return@setOnImageAvailableListener
+//            val bitmap = YuvToRgbConverter.yuvToRgb(this, image)
+//            image.close()
+//
+//            scope.launch {
+//                try {
+//                    val tensorImage = imageProcessor.process(TensorImage.fromBitmap(bitmap))
+//                    val outputs = model.process(tensorImage)
+//                    val detectionResult = outputs.probabilityAsCategoryList
+//
+//                    if (detectionResult.isNotEmpty()) {
+//                        val bestResult = detectionResult.maxByOrNull { it.score }
+//                        bestResult?.let {
+//                            if (it.score > 0.8f) {
+//                                Log.i("Gesture", "Label: ${it.label}, DisplayName: ${it.displayName}, Score: ${it.score}")
+//                                val currentTime = System.currentTimeMillis()
+//                                if (currentTime - lastGestureTime > gestureDebounceTime) {
+//                                    when (it.label) {
+//                                        "scrollup" -> {
+//                                            audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
+//                                            runOnUiThread {
+//                                                Toast.makeText(this@MainActivity, "Volume Up", Toast.LENGTH_SHORT).show()
+//                                            }
+//                                            lastGestureTime = currentTime
+//                                        }
+//                                        "down" -> {
+//                                            audioManager.adjustVolume(AudioManager.ADJUST_MUTE, AudioManager.FLAG_SHOW_UI)
+//                                            runOnUiThread {
+//                                                Toast.makeText(this@MainActivity, "Volume Down", Toast.LENGTH_SHORT).show()
+//                                            }
+//                                            lastGestureTime = currentTime
+//                                        }
+//                                        "up" -> {
+//                                            audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
+//                                            runOnUiThread {
+//                                                Toast.makeText(this@MainActivity, "Volume Up", Toast.LENGTH_SHORT).show()
+//                                            }
+//                                            lastGestureTime = currentTime
+//                                        }
+//
+//                                        else -> {}
+//                                    }
+//                                } else {
+//
+//                                }
+//                            } else {
+//                                Log.i("Gesture", "No gesture confident enough (max score: ${it.score})")
+//                            }
+//                        }
+//                    }
+//                } catch (e: Exception) {
+//                    Log.e("Gesture", "Frame processing error", e)
+//                }
+//            }
+//        }, backgroundHandler)
+//    }
     override fun onDestroy() {
         super.onDestroy()
         try {
@@ -749,18 +849,23 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     }
 
     private fun showSettingsFragment() {
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.settingsFragmentContainer, SettingsFragment())
-            .commit()
-        currentScreen = Screen.SETTINGS
+        try {
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.settingsFragmentContainer, SettingsFragment())
+                .commitNow() // Use commitNow to ensure synchronous commit
+            currentScreen = Screen.SETTINGS
 
-        findViewById<FrameLayout>(R.id.navigation_container)?.visibility = View.GONE
-        findViewById<FrameLayout>(R.id.dashboard_container)?.visibility = View.GONE
-        findViewById<FrameLayout>(R.id.batteryContainer)?.visibility = View.GONE
-        findViewById<FrameLayout>(R.id.mainFragmentContainer)?.visibility = View.GONE
-        findViewById<FrameLayout>(R.id.rightFragmentContainer)?.visibility = View.GONE
-
-        findViewById<FrameLayout>(R.id.settingsFragmentContainer)?.visibility = View.VISIBLE
+            // Update visibility of containers
+            findViewById<FrameLayout>(R.id.navigation_container)?.visibility = View.GONE
+            findViewById<FrameLayout>(R.id.dashboard_container)?.visibility = View.GONE
+            findViewById<FrameLayout>(R.id.batteryContainer)?.visibility = View.GONE
+            findViewById<FrameLayout>(R.id.mainFragmentContainer)?.visibility = View.GONE
+            findViewById<FrameLayout>(R.id.rightFragmentContainer)?.visibility = View.GONE
+            findViewById<FrameLayout>(R.id.settingsFragmentContainer)?.visibility = View.VISIBLE
+        } catch (e: IllegalStateException) {
+            Log.e("MainActivity", "Fragment transaction failed: ${e.message}", e)
+            Toast.makeText(this, "Failed to load settings screen", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun updateIconStates() {
@@ -782,7 +887,12 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == CAMERA_PERMISSION_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            setupCamera()
+         //   setupCamera()
+            Log.d(TAG, "Camera permission granted")
+            bindService()
+        }else {
+            Log.w(TAG, "Camera permission denied")
+            Toast.makeText(this, "Camera permission denied", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -804,23 +914,39 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
             val currentTime = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date())
             Log.d("TimeUpdate", "Current time: $currentTime")
             timeTextView.text = currentTime
+
+            // Auto Theme Switching
+            val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+            val isDayTime = hour in 6..17  // 6 AM to 5:59 PM
+
+            val overlayShouldBeEnabled = isDayTime // Day → enable overlay
+
+            val settingsFragment = SettingsFragment()
+            val overlayCurrentlyEnabled = settingsFragment.isOverlayEnabled()
+
+            if (overlayCurrentlyEnabled != overlayShouldBeEnabled) {
+                Log.i("ThemeAutoSwitch", "Switching theme. DayTime=$isDayTime")
+                settingsFragment.setOverlayTheme(overlayShouldBeEnabled)
+            }
+
         } catch (e: Exception) {
             Log.e("TimeUpdate", "Error updating time", e)
         }
     }
 
+
     private fun setLedState(state: Boolean) {
         val value = if (state) 1 else 0
         try {
-//            synchronized(carPropertyManager) {
-//                carPropertyManager.setProperty(
-//                    Integer::class.java,
-//                    VENDOR_EXTENSION_LIGHT_CONTROL_PROPERTY,
-//                    areaID,
-//                    Integer(value)
-//                )
-//                Log.d("LED", "LED state set to: $value")
-//            }
+            synchronized(carPropertyManager) {
+                carPropertyManager.setProperty(
+                    Integer::class.java,
+                    VENDOR_EXTENSION_LIGHT_CONTROL_PROPERTY,
+                    areaID,
+                    Integer(value)
+                )
+                Log.d("LED", "LED state set to: $value")
+            }
         } catch (e: Exception) {
             Log.e("LED", "Failed to set LED state", e)
         }
@@ -869,6 +995,19 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
 //        timeUpdateHandler.removeCallbacks(timeUpdateRunnable)
 //    }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        isDestroyed = true
+        eyeDetectionService?.setDetectionCallback(null)
+        timeUpdateHandler.removeCallbacks(timeUpdateRunnable)
+        scope.cancel()
+//        model.close()
+        imageReader.close()
+        cameraDevice?.close()
+        captureSession?.close()
+        backgroundThread.quitSafely()
+    }
+
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus && packageManager.hasSystemFeature("android.hardware.type.automotive")) {
@@ -883,6 +1022,9 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
 
     override fun onResume() {
         super.onResume()
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            bindService()
+        }
         bindService(
             Intent(this, VoskRecognitionService::class.java),
             serviceConnection,
@@ -892,6 +1034,11 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
 
     override fun onPause() {
         super.onPause()
+        if (isBoundEye) {
+            eyeDetectionService?.setDetectionCallback(null)
+            unbindService(serviceConnectionEye)
+            isBoundEye = false
+        }
         if (isBound) {
             unbindService(serviceConnection)
             isBound = false
@@ -913,14 +1060,6 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
                 updateLightIcon(false)
                 setLedState(false)
                 playAudio(R.raw.lightoff)
-            }
-            "light_mode" -> {
-                // change to light mode
-                playAudio(R.raw.day)
-            }
-            "night_mode" -> {
-                // change to dark mode
-                playAudio(R.raw.night)
             }
             "seat_front" -> {
                 // adjust seat position 3
@@ -983,6 +1122,8 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     }
 
     private fun startServiceOnlyOnce() {
+        Log.d(TAG, "Starting service -- Vosk and Drawsiness")
+        startService(Intent(this, EyeDetectionService::class.java))
         startService(Intent(this, VoskRecognitionService::class.java))
         isServiceRunning = true
     }
@@ -1006,4 +1147,55 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         lastCommand = command
         runOnUiThread { handleCommand(command) }
     }
+    override fun onResultReceived(status: String) {
+        if (isDestroyed) return
+        Log.d(TAG, "Result received: $status")
+
+        runOnUiThread {
+            if (isEyeDetectionEnabled) {
+                when (status.lowercase(Locale.ROOT)) {
+                    "open" -> drowsinessStatusIcon.setImageResource(R.drawable.ic_drowsiness)
+                    "closed" -> drowsinessStatusIcon.setImageResource(R.drawable.eye_closed)
+                    else -> drowsinessStatusIcon.setImageResource(R.drawable.eye_enabled)
+                }
+            } else {
+                drowsinessStatusIcon.setImageResource(R.drawable.eye_disabled)
+            }
+        }
+    }
+
+
+
+    override fun onErrorReceived(error: String) {
+        Log.e(TAG, "Error received: $error")
+        runOnUiThread {
+            Toast.makeText(this, "Error: $error", Toast.LENGTH_LONG).show()
+
+        }
+    }
+
+    override fun onStatusReceived(isEnabled: Boolean) {
+        if (isDestroyed) return
+        Log.d(TAG, "Status received: isEnabled=$isEnabled")
+        isEyeDetectionEnabled = isEnabled
+
+        // Make sure the activity is still alive
+        if (!isFinishing && !isDestroyed) {
+            runOnUiThread {
+                // Safely try to find the icon and update it
+                val eyeIcon = findViewById<ImageView?>(R.id.drowsinessStatusIcon)
+                eyeIcon?.setImageResource(
+                    if (isEnabled) R.drawable.eye_enabled else R.drawable.eye_disabled
+                )
+            }
+        }
+
+        // Also update the icon in SettingsFragment if it's currently shown
+        val settingsFragment = supportFragmentManager.findFragmentById(R.id.settingsFragmentContainer)
+        if (settingsFragment is SettingsFragment) {
+            settingsFragment.updateDrowsinessIcon(isEnabled)
+        }
+    }
+
+
 }
