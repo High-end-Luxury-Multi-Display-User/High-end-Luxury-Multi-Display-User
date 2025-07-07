@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="icons_colors">#a47cc4</color>
+    <color name="light_gray">#e0dce3</color>
+    <color name="light_purple">#BB86FC</color>
+    <color name="luxoft_purple">#5e278c</color>
+    <color name="purple">#673AB7</color>
+    <color name="white">#FFFFFFFF</color>
+    <string name="app_name">DriverLauncher</string>
+    <style name="Base.Theme.DriverLauncher" parent="Theme.Material3.Dark.NoActionBar">
+        
+        
+    </style>
+    <style name="MetricCard">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">100dp</item>
+        <item name="android:layout_columnWeight">1</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:padding">16dp</item>
+        <item name="android:background">@drawable/bg_card_purple</item>
+    </style>
+    <style name="MetricTitle">
+        <item name="android:textColor">#AAAAAA</item>
+        <item name="android:textSize">12sp</item>
+    </style>
+    <style name="MetricValue">
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="Theme.DriverLauncher" parent="Base.Theme.DriverLauncher"/>
+</resources>

@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="@drawable/bg_whole_background">
+
+    <!-- Light Icon + Progress Bar + LED Toggle -->
+    <LinearLayout
+        android:layout_width="133dp"
+        android:layout_height="319dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:padding="16dp">
+
+        <!-- Vertical Progress Bar with Border -->
+        <LinearLayout
+            android:layout_width="40dp"
+            android:layout_height="match_parent"
+            android:background="@drawable/progress_bar_border"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <ProgressBar
+                android:id="@+id/progressBar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="36dp"
+                android:layout_height="match_parent"
+                android:max="220"
+                android:progress="220"
+                android:progressDrawable="@drawable/bg_gradient"
+                android:rotation="180" />
+        </LinearLayout>
+
+        <!-- Labels + Dashes -->
+        <LinearLayout
+            android:layout_width="43dp"
+            android:layout_height="278dp"
+            android:layout_marginStart="16dp"
+            android:gravity="center_vertical"
+            android:orientation="vertical">
+
+            <!-- Repeat for each label + dash -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="220"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp" />
+
+                <View
+                    android:layout_width="40dp"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="8dp"
+                    android:background="#AA66CC" />
+            </LinearLayout>
+
+            <!-- Repeat for 0.4 to 0.0 -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0.4"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp" />
+
+                <View
+                    android:layout_width="40dp"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="8dp"
+                    android:background="#AA66CC" />
+            </LinearLayout>
+
+            <!-- Add similar blocks for 0.3, 0.2, 0.1, 0.0 -->
+
+            <!-- 0.3 -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0.3"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp" />
+
+                <View
+                    android:layout_width="40dp"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="8dp"
+                    android:background="#AA66CC" />
+            </LinearLayout>
+
+            <!-- 0.2 -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0.2"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp" />
+
+                <View
+                    android:layout_width="40dp"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="8dp"
+                    android:background="#AA66CC" />
+            </LinearLayout>
+
+            <!-- 0.1 -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0.1"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp" />
+
+                <View
+                    android:layout_width="40dp"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="8dp"
+                    android:background="#AA66CC" />
+            </LinearLayout>
+
+            <!-- 0.0 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="23dp"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0.0"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp" />
+
+                <View
+                    android:layout_width="40dp"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="8dp"
+                    android:background="#AA66CC" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 🔘 Toggle LED Button -->
+    <ImageButton
+        android:id="@+id/btnToggleLed"
+        android:layout_width="wrap_content"
+        android:layout_height="51dp"
+        android:layout_marginTop="16dp"
+        android:contentDescription="Toggle LED"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_led_off" />
+
+</LinearLayout>

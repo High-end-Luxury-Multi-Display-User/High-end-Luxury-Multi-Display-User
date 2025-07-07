@@ -1,0 +1,12 @@
+type gps_service, domain;
+type gps_service_exec, exec_type, file_type, vendor_file_type;
+type gps_service_api, service_manager_type;
+
+# Permissions
+allow gps_service gps_service_api:service_manager add;
+allow gps_service servicemanager:binder {call transfer};
+allow init gps_service_exec:file { getattr open read execute map};
+
+# Domain Transition
+init_daemon_domain(gps_service)  
+
