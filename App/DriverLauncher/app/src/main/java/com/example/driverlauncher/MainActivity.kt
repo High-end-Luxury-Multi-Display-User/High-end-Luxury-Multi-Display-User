@@ -39,7 +39,7 @@ import com.example.driverlauncher.carvitals.SeatFragment
 import com.example.driverlauncher.handgesture.YuvToRgbConverter
 import com.example.driverlauncher.home.DashboardFragment
 import com.example.driverlauncher.home.NavigationFragment
-import com.example.driverlauncher.ml.ModelMetadata
+
 import com.example.driverlauncher.settings.SettingsFragment
 import com.example.driverlauncher.voskva.VoskRecognitionService
 import kotlinx.coroutines.CoroutineScope
@@ -50,6 +50,7 @@ import kotlinx.coroutines.launch
 import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.support.image.ops.ResizeOp
+import org.tensorflow.lite.support.metadata.schema.ModelMetadata
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -202,11 +203,11 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         timeUpdateHandler.postDelayed(timeUpdateRunnable, 60000)
 
         // Camera Model
-        model = ModelMetadata.newInstance(this)
-        imageProcessor = ImageProcessor.Builder()
-            .add(ResizeOp(224, 224, ResizeOp.ResizeMethod.BILINEAR))
-            .build()
-        checkCameraPermission()
+//        model = ModelMetadata.newInstance(this)
+//        imageProcessor = ImageProcessor.Builder()
+//            .add(ResizeOp(224, 224, ResizeOp.ResizeMethod.BILINEAR))
+//            .build()
+//        checkCameraPermission()
     }
 
     private fun checkCameraPermission() {
@@ -221,15 +222,15 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
                 CAMERA_PERMISSION_CODE
             )
         } else {
-            setupCamera()
+//            setupCamera()
         }
     }
 
-    private fun setupCamera() {
-        startBackgroundThread()
-        setupImageReader()
-        openCamera()
-    }
+//    private fun setupCamera() {
+//        startBackgroundThread()
+//        setupImageReader()
+//        openCamera()
+//    }
 
     private fun startBackgroundThread() {
         backgroundThread = HandlerThread("CameraBackgroundThread")
@@ -237,65 +238,65 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         backgroundHandler = Handler(backgroundThread.looper)
     }
 
-    private fun setupImageReader() {
-        imageReader = ImageReader.newInstance(640, 480, android.graphics.ImageFormat.YUV_420_888, 2)
-        imageReader.setOnImageAvailableListener({ reader ->
-            val image = reader.acquireLatestImage() ?: return@setOnImageAvailableListener
-            val bitmap = YuvToRgbConverter.yuvToRgb(this, image)
-            image.close()
-
-            scope.launch {
-                try {
-                    val tensorImage = imageProcessor.process(TensorImage.fromBitmap(bitmap))
-                    val outputs = model.process(tensorImage)
-                    val detectionResult = outputs.probabilityAsCategoryList
-
-                    if (detectionResult.isNotEmpty()) {
-                        val bestResult = detectionResult.maxByOrNull { it.score }
-                        bestResult?.let {
-                            if (it.score > 0.8f) {
-                                Log.i("Gesture", "Label: ${it.label}, DisplayName: ${it.displayName}, Score: ${it.score}")
-                                val currentTime = System.currentTimeMillis()
-                                if (currentTime - lastGestureTime > gestureDebounceTime) {
-                                    when (it.label) {
-                                        "scrollup" -> {
-                                            audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
-                                            runOnUiThread {
-                                                Toast.makeText(this@MainActivity, "Volume Up", Toast.LENGTH_SHORT).show()
-                                            }
-                                            lastGestureTime = currentTime
-                                        }
-                                        "down" -> {
-                                            audioManager.adjustVolume(AudioManager.ADJUST_MUTE, AudioManager.FLAG_SHOW_UI)
-                                            runOnUiThread {
-                                                Toast.makeText(this@MainActivity, "Volume Down", Toast.LENGTH_SHORT).show()
-                                            }
-                                            lastGestureTime = currentTime
-                                        }
-                                        "up" -> {
-                                            audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
-                                            runOnUiThread {
-                                                Toast.makeText(this@MainActivity, "Volume Up", Toast.LENGTH_SHORT).show()
-                                            }
-                                            lastGestureTime = currentTime
-                                        }
-
-                                        else -> {}
-                                    }
-                                } else {
-
-                                }
-                            } else {
-                                Log.i("Gesture", "No gesture confident enough (max score: ${it.score})")
-                            }
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.e("Gesture", "Frame processing error", e)
-                }
-            }
-        }, backgroundHandler)
-    }
+//    private fun setupImageReader() {
+//        imageReader = ImageReader.newInstance(640, 480, android.graphics.ImageFormat.YUV_420_888, 2)
+//        imageReader.setOnImageAvailableListener({ reader ->
+//            val image = reader.acquireLatestImage() ?: return@setOnImageAvailableListener
+//            val bitmap = YuvToRgbConverter.yuvToRgb(this, image)
+//            image.close()
+//
+//            scope.launch {
+//                try {
+//                    val tensorImage = imageProcessor.process(TensorImage.fromBitmap(bitmap))
+//                    val outputs = model.process(tensorImage)
+//                    val detectionResult = outputs.probabilityAsCategoryList
+//
+//                    if (detectionResult.isNotEmpty()) {
+//                        val bestResult = detectionResult.maxByOrNull { it.score }
+//                        bestResult?.let {
+//                            if (it.score > 0.8f) {
+//                                Log.i("Gesture", "Label: ${it.label}, DisplayName: ${it.displayName}, Score: ${it.score}")
+//                                val currentTime = System.currentTimeMillis()
+//                                if (currentTime - lastGestureTime > gestureDebounceTime) {
+//                                    when (it.label) {
+//                                        "scrollup" -> {
+//                                            audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
+//                                            runOnUiThread {
+//                                                Toast.makeText(this@MainActivity, "Volume Up", Toast.LENGTH_SHORT).show()
+//                                            }
+//                                            lastGestureTime = currentTime
+//                                        }
+//                                        "down" -> {
+//                                            audioManager.adjustVolume(AudioManager.ADJUST_MUTE, AudioManager.FLAG_SHOW_UI)
+//                                            runOnUiThread {
+//                                                Toast.makeText(this@MainActivity, "Volume Down", Toast.LENGTH_SHORT).show()
+//                                            }
+//                                            lastGestureTime = currentTime
+//                                        }
+//                                        "up" -> {
+//                                            audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
+//                                            runOnUiThread {
+//                                                Toast.makeText(this@MainActivity, "Volume Up", Toast.LENGTH_SHORT).show()
+//                                            }
+//                                            lastGestureTime = currentTime
+//                                        }
+//
+//                                        else -> {}
+//                                    }
+//                                } else {
+//
+//                                }
+//                            } else {
+//                                Log.i("Gesture", "No gesture confident enough (max score: ${it.score})")
+//                            }
+//                        }
+//                    }
+//                } catch (e: Exception) {
+//                    Log.e("Gesture", "Frame processing error", e)
+//                }
+//            }
+//        }, backgroundHandler)
+//    }
 
     @SuppressLint("MissingPermission")
     private fun openCamera() {
@@ -410,7 +411,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == CAMERA_PERMISSION_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            setupCamera()
+//            setupCamera()
         }
     }
 
@@ -432,10 +433,26 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
             val currentTime = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date())
             Log.d("TimeUpdate", "Current time: $currentTime")
             timeTextView.text = currentTime
+
+            // 🌞 Auto Theme Switching
+            val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+            val isDayTime = hour in 6..17  // 6 AM to 5:59 PM
+
+            val overlayShouldBeEnabled = isDayTime // Day → enable overlay
+
+            val settingsFragment = SettingsFragment()
+            val overlayCurrentlyEnabled = settingsFragment.isOverlayEnabled()
+
+            if (overlayCurrentlyEnabled != overlayShouldBeEnabled) {
+                Log.i("ThemeAutoSwitch", "Switching theme. DayTime=$isDayTime")
+                settingsFragment.setOverlayTheme(overlayShouldBeEnabled)
+            }
+
         } catch (e: Exception) {
             Log.e("TimeUpdate", "Error updating time", e)
         }
     }
+
 
     private fun setLedState(state: Boolean) {
         val value = if (state) 1 else 0
@@ -465,7 +482,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         super.onDestroy()
         timeUpdateHandler.removeCallbacks(timeUpdateRunnable)
         scope.cancel()
-        model.close()
+//        model.close()
         imageReader.close()
         cameraDevice?.close()
         captureSession?.close()
