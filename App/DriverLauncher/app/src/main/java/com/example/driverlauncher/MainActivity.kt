@@ -249,6 +249,99 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
             bindService()
         }
 
+        /******************UserPicker&UserName**********/
+        val userContainer = findViewById<LinearLayout>(R.id.driver_profile)
+            ?: throw IllegalStateException("Missing user_container")
+        userContainer.setOnClickListener {
+            startUserPickerActivity()
+        }
+        val userIcon = findViewById<ImageView>(R.id.user_profile)!!
+        userIcon?.setOnClickListener {
+            startUserPickerActivity()
+        }
+
+        updateProfileName()
+
+    }
+
+    private fun updateProfileName() {
+        val profileName = findViewById<TextView>(R.id.profile_name)
+        if (profileName == null) {
+            Log.e("ProfileName", "Profile name TextView not found")
+            return
+        }
+
+        try {
+            // Get the UserManager service
+            val userManager = getSystemService(Context.USER_SERVICE)
+            if (userManager == null) {
+                Log.e("ProfileName", "UserManager service is null")
+                runOnUiThread {
+                    profileName.text = "Unknown User"
+                    Toast.makeText(this, "User service unavailable", Toast.LENGTH_SHORT).show()
+                }
+                return
+            }
+
+            // Use reflection to invoke UserManager.getUserName()
+            val userManagerClass = userManager.javaClass
+            val getUserNameMethod = userManagerClass.getMethod("getUserName")
+            val userName = getUserNameMethod.invoke(userManager) as? String
+
+            runOnUiThread {
+                profileName.text = userName ?: "Unknown User"
+                Log.d("ProfileName", "User name set to: ${userName ?: "Unknown User"}")
+            }
+        } catch (e: NoSuchMethodException) {
+            Log.e("ProfileName", "getUserName method not found", e)
+            runOnUiThread {
+                profileName.text = "Unknown User"
+                Toast.makeText(this, "Cannot retrieve user name: Method unavailable", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: SecurityException) {
+            Log.e("ProfileName", "Permission denied for accessing user name", e)
+            runOnUiThread {
+                profileName.text = "Unknown User"
+                Toast.makeText(this, "Permission denied for user name", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Log.e("ProfileName", "Error accessing user name", e)
+            runOnUiThread {
+                profileName.text = "Unknown User"
+                Toast.makeText(this, "Error retrieving user name: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun startUserPickerActivity() {
+        try {
+            // Create an Intent without directly referencing the class
+            val driverIntent = Intent().apply {
+                setClassName("com.android.systemui", "com.android.systemui.car.userpicker.UserPickerActivity")
+            }
+
+            // Verify if the activity can be resolved
+            val packageManager = packageManager
+            if (driverIntent.resolveActivity(packageManager) != null) {
+                startActivity(driverIntent)
+                Log.d("UserPicker", "Successfully started UserPickerActivity")
+            } else {
+                Log.e("UserPicker", "UserPickerActivity not found or cannot be resolved")
+                runOnUiThread {
+                    Toast.makeText(this, "Cannot open user picker: Activity not found", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } catch (e: SecurityException) {
+            Log.e("UserPicker", "Security exception while starting UserPickerActivity", e)
+            runOnUiThread {
+                Toast.makeText(this, "Permission denied to open user picker", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Log.e("UserPicker", "Failed to start UserPickerActivity", e)
+            runOnUiThread {
+                Toast.makeText(this, "Error opening user picker: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun bindService() {
