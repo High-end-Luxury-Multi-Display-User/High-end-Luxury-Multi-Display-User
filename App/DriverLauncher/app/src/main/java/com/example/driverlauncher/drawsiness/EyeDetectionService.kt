@@ -47,7 +47,7 @@ class EyeDetectionService : Service() {
         fun getService(): EyeDetectionService = this@EyeDetectionService
     }
 
-    fun setDetectionCallback(callback: MainActivity) {
+    fun setDetectionCallback(callback: MainActivity?) {
         this.callback = callback
     }
 

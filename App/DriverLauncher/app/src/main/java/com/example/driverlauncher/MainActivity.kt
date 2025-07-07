@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
-import android.graphics.Color
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
@@ -61,7 +60,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         private const val TAG = "MainActivity"
         private const val PERMISSIONS_REQUEST_CAMERA = 100
     }
-
+    private var isDestroyed = false
     private var eyeDetectionService: EyeDetectionService? = null
      var isBoundEye = true
      var isEyeDetectionEnabled = false
@@ -248,21 +247,42 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     }
 
     private fun bindService() {
+        if (isDestroyed) return
         Log.d(TAG, "Binding to service")
         bindService(Intent(this, EyeDetectionService::class.java), serviceConnectionEye, Context.BIND_AUTO_CREATE)
     }
 
-     fun toggleEyeService() {
-        Intent(this, EyeDetectionService::class.java).apply {
+    fun toggleEyeService(): Boolean {
+        val intent = Intent(this, EyeDetectionService::class.java).apply {
             action = if (isEyeDetectionEnabled) {
                 EyeDetectionService.ACTION_STOP_DETECTION
             } else {
                 EyeDetectionService.ACTION_START_DETECTION
             }
-            startService(this)
         }
+        startService(intent)
+
+        // Only update callback if service is bound
+        if (isBoundEye && eyeDetectionService != null) {
+            if (isEyeDetectionEnabled) {
+                eyeDetectionService?.setDetectionCallback(null)
+            } else {
+                eyeDetectionService?.setDetectionCallback(this)
+            }
+        } else {
+            Log.w(TAG, "toggleEyeService: EyeDetectionService not yet bound")
+        }
+
         isEyeDetectionEnabled = !isEyeDetectionEnabled
-        updateToggleButton()
+
+        // Update dashboard icon immediately
+        runOnUiThread {
+            drowsinessStatusIcon.setImageResource(
+                if (isEyeDetectionEnabled) R.drawable.eye_enabled else R.drawable.eye_disabled
+            )
+        }
+
+        return isEyeDetectionEnabled
     }
 
     private fun updateToggleButton() {
@@ -522,6 +542,8 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
 
     override fun onDestroy() {
         super.onDestroy()
+        isDestroyed = true
+        eyeDetectionService?.setDetectionCallback(null)
         timeUpdateHandler.removeCallbacks(timeUpdateRunnable)
         scope.cancel()
         model.close()
@@ -558,6 +580,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     override fun onPause() {
         super.onPause()
         if (isBoundEye) {
+            eyeDetectionService?.setDetectionCallback(null)
             unbindService(serviceConnectionEye)
             isBoundEye = false
         }
@@ -678,6 +701,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         runOnUiThread { handleCommand(command) }
     }
     override fun onResultReceived(status: String) {
+        if (isDestroyed) return
         Log.d(TAG, "Result received: $status")
 
         runOnUiThread {
@@ -704,22 +728,27 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     }
 
     override fun onStatusReceived(isEnabled: Boolean) {
+        if (isDestroyed) return
         Log.d(TAG, "Status received: isEnabled=$isEnabled")
         isEyeDetectionEnabled = isEnabled
 
+        // Make sure the activity is still alive
         if (!isFinishing && !isDestroyed) {
             runOnUiThread {
-                drowsinessStatusIcon.setImageResource(
+                // 🔒 Safely try to find the icon and update it
+                val eyeIcon = findViewById<ImageView?>(R.id.drowsinessStatusIcon)
+                eyeIcon?.setImageResource(
                     if (isEnabled) R.drawable.eye_enabled else R.drawable.eye_disabled
                 )
             }
         }
 
-
+        // ✅ Also update the icon in SettingsFragment if it's currently shown
         val settingsFragment = supportFragmentManager.findFragmentById(R.id.settingsFragmentContainer)
         if (settingsFragment is SettingsFragment) {
             settingsFragment.updateDrowsinessIcon(isEnabled)
         }
     }
+
 
 }
