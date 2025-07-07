@@ -266,6 +266,47 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
             audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
             updateVolumeIcon()
         }
+
+        val userContainer = findViewById<LinearLayout>(R.id.driver_profile)
+            ?: throw IllegalStateException("Missing user_container")
+        userContainer.setOnClickListener {
+            startUserPickerActivity()
+        }
+        val userIcon = findViewById<ImageView>(R.id.user_profile)!!
+        userIcon?.setOnClickListener {
+            startUserPickerActivity()
+        }
+    }
+
+    private fun startUserPickerActivity() {
+        try {
+            // Create an Intent without directly referencing the class
+            val driverIntent = Intent().apply {
+                setClassName("com.android.systemui", "com.android.systemui.car.userpicker.UserPickerActivity")
+            }
+
+            // Verify if the activity can be resolved
+            val packageManager = packageManager
+            if (driverIntent.resolveActivity(packageManager) != null) {
+                startActivity(driverIntent)
+                Log.d("UserPicker", "Successfully started UserPickerActivity")
+            } else {
+                Log.e("UserPicker", "UserPickerActivity not found or cannot be resolved")
+                runOnUiThread {
+                    Toast.makeText(this, "Cannot open user picker: Activity not found", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } catch (e: SecurityException) {
+            Log.e("UserPicker", "Security exception while starting UserPickerActivity", e)
+            runOnUiThread {
+                Toast.makeText(this, "Permission denied to open user picker", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Log.e("UserPicker", "Failed to start UserPickerActivity", e)
+            runOnUiThread {
+                Toast.makeText(this, "Error opening user picker: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun checkCameraPermission() {
