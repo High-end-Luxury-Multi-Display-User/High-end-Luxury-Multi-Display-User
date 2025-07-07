@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.os.Bundle
 import android.util.Log
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -75,19 +74,19 @@ class SettingsFragment : Fragment() {
         updateThemeImage(themeImage)
     }
 
-    @SuppressLint("UseCompatLoadingForDrawables")
+    @SuppressLint("UseCompatLoadingForDrawables", "UseRequireInsteadOfGet")
     private fun toggleImage(imageButton: ImageButton, offResource: Int, onResource: Int) {
         Log.i("SettingsFragment", "toggleImage: current=${imageButton.drawable.constantState}, off=$offResource, on=$onResource")
 
-        // Language Switch
-        val languageContainer = view.findViewById<LinearLayout>(R.id.language_container)
-        val languageImage = view.findViewById<ImageButton>(R.id.language_image)
-        languageContainer.setOnClickListener {
-            toggleImage(languageImage, R.drawable.english, R.drawable.arabic)
-        }
-        languageImage.setOnClickListener {
-            toggleImage(languageImage, R.drawable.english, R.drawable.arabic)
-        }
+//        // Language Switch
+//        val languageContainer = view?.findViewById<LinearLayout>(R.id.language_container)
+//        val languageImage = view?.findViewById<ImageButton>(R.id.language_image)
+//        languageContainer.setOnClickListener {
+//            toggleImage(languageImage, R.drawable.english, R.drawable.arabic)
+//        }
+//        languageImage.setOnClickListener {
+//            toggleImage(languageImage, R.drawable.english, R.drawable.arabic)
+//        }
     }
 
     fun updateVoiceImage() {
@@ -242,8 +241,6 @@ class SettingsFragment : Fragment() {
             Log.e("SettingsFragment", "Failed to restart System UI: ${e.message}", e)
             Toast.makeText(context, "Failed to restart System UI", Toast.LENGTH_LONG).show()
         }
-    override fun onResume() {
-        super.onResume()
-        updateVoiceImage()
     }
+
 }
