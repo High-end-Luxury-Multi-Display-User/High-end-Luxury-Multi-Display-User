@@ -2,13 +2,13 @@ package com.example.driverlauncher
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.car.Car
-import android.car.hardware.property.CarPropertyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.graphics.ImageFormat
+import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
@@ -51,9 +51,12 @@ import kotlinx.coroutines.launch
 import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.support.image.ops.ResizeOp
+import java.io.BufferedReader
+import java.io.InputStreamReader
 import org.tensorflow.lite.support.metadata.schema.ModelMetadata
 import java.text.SimpleDateFormat
 import java.util.*
+import java.lang.reflect.Method
 
 class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCallback ,EyeDetectionService.DetectionCallback{
     companion object {
@@ -65,6 +68,9 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         private const val TAG = "MainActivity"
         private const val PERMISSIONS_REQUEST_CAMERA = 100
     }
+
+    private var isModelClosed = false // Track model state
+
     private var isDestroyed = false
     private var eyeDetectionService: EyeDetectionService? = null
      var isBoundEye = true
@@ -82,6 +88,8 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     private lateinit var homeIcon: ImageView
     private lateinit var carVitalsIcon: ImageView
     private lateinit var settingsIcon: ImageView
+
+    // Camera gesture model
     private lateinit var model: ModelMetadata
     private lateinit var imageProcessor: ImageProcessor
     private val CAMERA_PERMISSION_CODE = 100
@@ -92,8 +100,54 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     private lateinit var backgroundThread: HandlerThread
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private lateinit var audioManager: AudioManager
+    private var gestureSequenceCount = 0
+    private var lastDetectedGesture: String? = null
+    private val requiredSequentialFrames = 2
     private var lastGestureTime = 0L
-    private val gestureDebounceTime = 500L // 1 second debounce
+    private val iconRevertDelay = 3000L
+    private val gestureDebounceTime = 1000L
+    private lateinit var ic_volume:ImageView
+
+
+    private fun executeShellCommand(command: String): Pair<Boolean, String> {
+        try {
+            // Use reflection to invoke Runtime.getRuntime().exec
+            val runtimeClass = Class.forName("java.lang.Runtime")
+            val getRuntimeMethod: Method = runtimeClass.getDeclaredMethod("getRuntime")
+            val runtime: Any = getRuntimeMethod.invoke(null) // Get Runtime instance
+            val execMethod: Method = runtimeClass.getDeclaredMethod("exec", String::class.java)
+            val process: Process = execMethod.invoke(runtime, command) as Process
+
+            val output = BufferedReader(InputStreamReader(process.inputStream)).use { it.readText() }
+            val error = BufferedReader(InputStreamReader(process.errorStream)).use { it.readText() }
+            val exitCode = process.waitFor()
+            if (exitCode == 0) {
+                Log.i("ExecCommand", "Executed shell command via reflection: $command, output: $output")
+                return Pair(true, output)
+            } else {
+                Log.e("ExecCommand", "Shell command failed: $command, error: $error, exit code: $exitCode")
+                return Pair(false, error)
+            }
+        } catch (e: Exception) {
+            Log.e("ExecCommand", "Failed to execute shell command via reflection: ${e.message}", e)
+            return Pair(false, e.message ?: "Unknown error")
+        }
+    }
+    private fun executeCommandViaReflection(command: String): Boolean {
+        try {
+            val runtimeClass = Class.forName("java.lang.Runtime")
+            val getRuntimeMethod: Method = runtimeClass.getDeclaredMethod("getRuntime")
+            val runtime: Any = getRuntimeMethod.invoke(null) // Get Runtime instance
+            val execMethod: Method = runtimeClass.getDeclaredMethod("exec", String::class.java)
+            val process: Process = execMethod.invoke(runtime, command) as Process
+            val exitCode = process.waitFor()
+            Log.d("Reflection", "Command executed: $command, Exit code: $exitCode")
+            return exitCode == 0
+        } catch (e: Exception) {
+            Log.e("Reflection", "Failed to execute command via reflection: ${e.message}", e)
+            return false
+        }
+    }
 
     private var currentScreen = Screen.HOME // Track current screen state
     enum class Screen {
@@ -138,10 +192,11 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        Log.w("ExecCommand","test")
         /*********************************************/
         // VA shenanigans
-        checkPermissions()
-        startServiceOnlyOnce()
+       // checkPermissions()
+       // startServiceOnlyOnce()
         /********************************************/
         // Initialize AudioManager
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -150,6 +205,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         drowsinessStatusIcon.setImageResource(R.drawable.eye_disabled)
         // Initialize views
         lightIcon = findViewById(R.id.light_icon)
+        ic_volume = findViewById(R.id.ic_volume)
         timeTextView = findViewById(R.id.time) ?: run {
             Log.e("TimeUpdate", "Time TextView not found!")
             return
@@ -231,12 +287,27 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         updateTime()
         timeUpdateHandler.postDelayed(timeUpdateRunnable, 60000)
 
-        // Camera Model
-//        model = ModelMetadata.newInstance(this)
-//        imageProcessor = ImageProcessor.Builder()
-//            .add(ResizeOp(224, 224, ResizeOp.ResizeMethod.BILINEAR))
-//            .build()
-//        checkCameraPermission()
+        // Camera Gesture Model
+        model = ModelMetadata.newInstance(this)
+        imageProcessor = ImageProcessor.Builder()
+            .add(ResizeOp(224, 224, ResizeOp.ResizeMethod.BILINEAR))
+            .build()
+        checkCameraPermission()
+
+        ic_volume.setOnClickListener {
+            val success = executeCommandViaReflection("input keyevent 24")
+            if (success) {
+                Log.d("Reflection", "Volume up command executed")
+                updateVolumeIcon()
+            } else {
+                Log.e("Reflection", "Failed to execute volume up command")
+                runOnUiThread {
+                    Toast.makeText(this, "Failed to adjust volume", Toast.LENGTH_SHORT).show()
+                }
+            }
+            executeShellCommand("input keyevent 24")
+        }
+
         /***************Drawsiness**************/
         startServiceOnlyOnce()
 
@@ -261,7 +332,6 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         }
 
         updateProfileName()
-
     }
 
     private fun updateProfileName() {
@@ -414,6 +484,106 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         backgroundHandler = Handler(backgroundThread.looper)
     }
 
+    private fun setupImageReader() {
+        imageReader = ImageReader.newInstance(224, 224, ImageFormat.YUV_420_888, 2)
+        imageReader.setOnImageAvailableListener({ reader ->
+            val image = reader.acquireNextImage() ?: return@setOnImageAvailableListener
+            try {
+                val bitmap = YuvToRgbConverter.yuvToRgb(this, image) ?: return@setOnImageAvailableListener
+                scope.launch {
+                    try {
+                        synchronized(model) {
+                            if (!isModelClosed) {
+                                val tensorImage = imageProcessor.process(TensorImage.fromBitmap(bitmap))
+                                val outputs = model.process(tensorImage)
+                                val detectionResult = outputs.probabilityAsCategoryList
+                                if (detectionResult.isNotEmpty()) {
+                                    val bestResult = detectionResult.maxByOrNull { it.score }
+                                    bestResult?.let {
+                                        if (it.score > 0.8f) {
+                                            Log.i("Gesture", "Label: ${it.label}, Score: ${it.score}")
+                                            val currentTime = System.currentTimeMillis()
+                                            if (it.label == lastDetectedGesture) {
+                                                gestureSequenceCount++
+                                            } else {
+                                                lastDetectedGesture = it.label
+                                                gestureSequenceCount = 1
+                                            }
+                                            if (gestureSequenceCount >= requiredSequentialFrames &&
+                                                currentTime - lastGestureTime > gestureDebounceTime
+                                            ) {
+                                                when (it.label) {
+                                                    "scrollup" -> {
+//                                                        try {
+//                                                            Runtime.getRuntime().exec(arrayOf("sh", "-c", "input keyevent 24"))
+//                                                        } catch (e: Exception) {
+//                                                            Log.e("VolumeControl", "Failed to execute keyevent", e)
+//                                                        }
+
+                                                        //audioManager.adjustVolume(AudioManager.ADJUST_MUTE, AudioManager.FLAG_SHOW_UI)
+                                                        runOnUiThread {
+                                                            Toast.makeText(this@MainActivity, "Mute", Toast.LENGTH_SHORT).show()
+                                                            ic_volume.setImageResource(R.drawable.ic_mute)
+                                                            updateVolumeIcon()
+                                                        }
+                                                        lastGestureTime = currentTime
+                                                        resetGestureTracking()
+                                                    }
+                                                    "down" -> {
+                                                        audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
+                                                        runOnUiThread {
+                                                            Toast.makeText(this@MainActivity, "Volume Down", Toast.LENGTH_SHORT).show()
+                                                            ic_volume.setImageResource(R.drawable.ic_decrease)
+                                                            timeUpdateHandler.postDelayed({
+                                                                updateVolumeIcon()
+                                                            }, iconRevertDelay)
+                                                        }
+                                                        lastGestureTime = currentTime
+                                                        resetGestureTracking()
+                                                    }
+                                                    "up" -> {
+                                                        audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
+                                                        runOnUiThread {
+                                                            Toast.makeText(this@MainActivity, "Volume Up", Toast.LENGTH_SHORT).show()
+                                                            ic_volume.setImageResource(R.drawable.ic_increase)
+                                                            timeUpdateHandler.postDelayed({
+                                                                updateVolumeIcon()
+                                                            }, iconRevertDelay)
+                                                        }
+                                                        lastGestureTime = currentTime
+                                                        resetGestureTracking()
+                                                    }
+                                                    else -> {
+                                                        runOnUiThread { updateVolumeIcon() }
+                                                    }
+                                                }
+                                            } else {
+                                                runOnUiThread { updateVolumeIcon() }
+                                            }
+                                        } else {
+                                            Log.i("Gesture", "No gesture confident enough (max score: ${it.score})")
+                                            resetGestureTracking()
+                                        }
+                                    }
+                                } else {
+                                    runOnUiThread { updateVolumeIcon() }
+                                    resetGestureTracking()
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e("Gesture", "Frame processing error", e)
+                        resetGestureTracking()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("Gesture", "Image processing error", e)
+            } finally {
+                image.close()
+            }
+        }, backgroundHandler)
+    }
+
 //    private fun setupImageReader() {
 //        imageReader = ImageReader.newInstance(640, 480, android.graphics.ImageFormat.YUV_420_888, 2)
 //        imageReader.setOnImageAvailableListener({ reader ->
@@ -473,47 +643,177 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
 //            }
 //        }, backgroundHandler)
 //    }
+    override fun onDestroy() {
+        super.onDestroy()
+        try {
+            captureSession?.stopRepeating()
+            captureSession?.close()
+            captureSession = null
+        } catch (e: Exception) {
+            Log.e("CameraDebug", "Error stopping capture session", e)
+        }
+        try {
+            cameraDevice?.close()
+            cameraDevice = null
+        } catch (e: Exception) {
+            Log.e("CameraDebug", "Error closing camera device", e)
+        }
+        try {
+            imageReader.setOnImageAvailableListener(null, null)
+            imageReader.close()
+        } catch (e: Exception) {
+            Log.e("CameraDebug", "Error closing image reader", e)
+        }
+        try {
+            scope.cancel()
+            isModelClosed = true
+            model.close()
+        } catch (e: Exception) {
+            Log.e("Model", "Error closing model", e)
+        }
+        try {
+            backgroundThread.quitSafely()
+        } catch (e: Exception) {
+            Log.e("CameraDebug", "Error quitting background thread", e)
+        }
+        timeUpdateHandler.removeCallbacks(timeUpdateRunnable)
+    }
+    // Helper function to update volume icon based on current audio state
+    private fun updateVolumeIcon() {
+        val isMuted = audioManager.isStreamMute(AudioManager.STREAM_MUSIC) ||
+                audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) == 0
+        ic_volume.setImageResource(if (isMuted) R.drawable.ic_mute else R.drawable.ic_volume)
+    }
 
+    // Helper function to reset gesture tracking
+    private fun resetGestureTracking() {
+        gestureSequenceCount = 0
+        lastDetectedGesture = null
+    }
     @SuppressLint("MissingPermission")
     private fun openCamera() {
         val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
-        val cameraId = cameraManager.cameraIdList.first { id ->
-            val characteristics = cameraManager.getCameraCharacteristics(id)
-            characteristics.get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_BACK
+        try {
+            val cameraIds = cameraManager.cameraIdList
+            if (cameraIds.isEmpty()) {
+                Log.e("CameraDebug", "No cameras found in cameraIdList")
+//                handleNoCameraAvailable("No cameras available")
+                return
+            }
+            Log.d("CameraDebug", "Available cameras: ${cameraIds.joinToString()}")
+            cameraIds.forEach { id ->
+                try {
+                    val characteristics = cameraManager.getCameraCharacteristics(id)
+                    val facing = characteristics.get(CameraCharacteristics.LENS_FACING)
+                    val facingString = when (facing) {
+                        CameraCharacteristics.LENS_FACING_FRONT -> "Front-facing"
+                        CameraCharacteristics.LENS_FACING_BACK -> "Rear-facing"
+                        CameraCharacteristics.LENS_FACING_EXTERNAL -> "External"
+                        else -> "Unknown ($facing)"
+                    }
+                    Log.d("CameraDebug", "Camera ID: $id, Facing: $facingString")
+                } catch (e: CameraAccessException) {
+                    Log.e("CameraDebug", "Failed to get characteristics for camera ID: $id", e)
+                }
+            }
+        } catch (e: CameraAccessException) {
+            Log.e("CameraDebug", "Failed to list cameras: ${e.reason}", e)
+//            handleNoCameraAvailable("Camera access denied: ${e.reason}")
+            return
+        } catch (e: Exception) {
+            Log.e("CameraDebug", "Unexpected error listing cameras", e)
+//            handleNoCameraAvailable("Unexpected error listing cameras")
+            return
         }
 
-        cameraManager.openCamera(cameraId, object : CameraDevice.StateCallback() {
-            override fun onOpened(camera: CameraDevice) {
-                cameraDevice = camera
-                val surface = imageReader.surface
-                val requestBuilder = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
-                requestBuilder.addTarget(surface)
+        val cameraId = try {
+            val rearCamera = cameraManager.cameraIdList.firstOrNull { id ->
+                val characteristics = cameraManager.getCameraCharacteristics(id)
+                characteristics.get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_BACK
+            }
+            Log.d("CameraDebug", "Rear-facing camera: ${rearCamera ?: "none"}")
+            rearCamera ?: cameraManager.cameraIdList.firstOrNull().also {
+                Log.d("CameraDebug", "Falling back to camera: $it")
+            }
+        } catch (e: Exception) {
+            Log.e("CameraDebug", "Failed to select camera", e)
+//            handleNoCameraAvailable("Failed to select camera")
+            return
+        }
 
-                camera.createCaptureSession(listOf(surface), object : CameraCaptureSession.StateCallback() {
-                    override fun onConfigured(session: CameraCaptureSession) {
-                        captureSession = session
-                        session.setRepeatingRequest(requestBuilder.build(), null, backgroundHandler)
-                        Log.d("CameraDebug", "Capture session started")
+        if (cameraId == null) {
+            Log.e("CameraDebug", "No cameras available or accessible")
+//            handleNoCameraAvailable("No cameras available")
+            return
+        }
+
+        try {
+            Log.d("CameraDebug", "Attempting to open camera ID: $cameraId")
+            cameraManager.openCamera(cameraId, object : CameraDevice.StateCallback() {
+                override fun onOpened(camera: CameraDevice) {
+                    cameraDevice = camera
+                    Log.d("CameraDebug", "Camera $cameraId opened successfully")
+                    val surface = imageReader?.surface ?: run {
+                        Log.e("CameraDebug", "ImageReader surface is null")
+//                        handleNoCameraAvailable("ImageReader surface unavailable")
+                        return
                     }
-
-                    override fun onConfigureFailed(session: CameraCaptureSession) {
-                        Log.e("CameraDebug", "Configuration failed")
+                    val requestBuilder = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
+                    requestBuilder.addTarget(surface)
+                    camera.createCaptureSession(listOf(surface), object : CameraCaptureSession.StateCallback() {
+                        override fun onConfigured(session: CameraCaptureSession) {
+                            captureSession = session
+                            try {
+                                session.setRepeatingRequest(requestBuilder.build(), null, backgroundHandler)
+                                Log.d("CameraDebug", "Capture session started for camera ID: $cameraId")
+                            } catch (e: Exception) {
+                                Log.e("CameraDebug", "Failed to start repeating request", e)
+//                                handleNoCameraAvailable("Failed to start capture session")
+                            }
+                        }
+                        override fun onConfigureFailed(session: CameraCaptureSession) {
+                            Log.e("CameraDebug", "Capture session configuration failed for camera ID: $cameraId")
+//                            handleNoCameraAvailable("Capture session configuration failed")
+                        }
+                    }, backgroundHandler)
+                }
+                override fun onDisconnected(camera: CameraDevice) {
+                    Log.w("CameraDebug", "Camera disconnected: $cameraId")
+                    camera.close()
+                    cameraDevice = null
+//                    handleNoCameraAvailable("Camera disconnected")
+                }
+                override fun onError(camera: CameraDevice, error: Int) {
+                    val errorMsg = when (error) {
+                        CameraDevice.StateCallback.ERROR_CAMERA_IN_USE -> "Camera in use"
+                        CameraDevice.StateCallback.ERROR_MAX_CAMERAS_IN_USE -> "Max cameras in use"
+                        CameraDevice.StateCallback.ERROR_CAMERA_DISABLED -> "Camera disabled"
+                        CameraDevice.StateCallback.ERROR_CAMERA_DEVICE -> "Camera device error"
+                        CameraDevice.StateCallback.ERROR_CAMERA_SERVICE -> "Camera service error"
+                        else -> "Unknown error ($error)"
                     }
-                }, backgroundHandler)
-            }
-
-            override fun onDisconnected(camera: CameraDevice) {
-                camera.close()
-                cameraDevice = null
-            }
-
-            override fun onError(camera: CameraDevice, error: Int) {
-                Log.e("CameraDebug", "Camera error: $error")
-                camera.close()
-                cameraDevice = null
-            }
-        }, backgroundHandler)
+                    Log.e("CameraDebug", "Camera error for ID $cameraId: $errorMsg")
+                    camera.close()
+                    cameraDevice = null
+//                    handleNoCameraAvailable("Camera error: $errorMsg")
+                }
+            }, backgroundHandler)
+        } catch (e: CameraAccessException) {
+            Log.e("CameraDebug", "Failed to open camera ID: $cameraId, reason: ${e.reason}", e)
+//            handleNoCameraAvailable("Camera access denied: ${e.reason}")
+        } catch (e: Exception) {
+            Log.e("CameraDebug", "Unexpected error opening camera ID: $cameraId", e)
+//            handleNoCameraAvailable("Unexpected error opening camera")
+        }
     }
+
+//    private fun handleNoCameraAvailable(reason: String) {
+//        runOnUiThread {
+//            Toast.makeText(this, "Cannot enable gesture recognition: $reason", Toast.LENGTH_LONG).show()
+//        }
+//        isGestureRecognitionEnabled = false
+//        cleanupCameraResources()
+//    }
 
     private fun showHomeFragments() {
         supportFragmentManager.beginTransaction()
@@ -615,7 +915,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
             Log.d("TimeUpdate", "Current time: $currentTime")
             timeTextView.text = currentTime
 
-            // 🌞 Auto Theme Switching
+            // Auto Theme Switching
             val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
             val isDayTime = hour in 6..17  // 6 AM to 5:59 PM
 
@@ -658,6 +958,42 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     private fun updateLightIcon(state: Boolean) {
         lightIcon.setImageResource(if (state) R.drawable.light_on else R.drawable.light_off)
     }
+
+//    override fun onDestroy() {
+//        super.onDestroy()
+//        // Stop camera capture and clean up resources
+//        try {
+//            captureSession?.stopRepeating()
+//            captureSession?.close()
+//            captureSession = null
+//        } catch (e: Exception) {
+//            Log.e("CameraDebug", "Error stopping capture session", e)
+//        }
+//        try {
+//            cameraDevice?.close()
+//            cameraDevice = null
+//        } catch (e: Exception) {
+//            Log.e("CameraDebug", "Error closing camera device", e)
+//        }
+//        try {
+//            imageReader.setOnImageAvailableListener(null, null) // Detach listener
+//            imageReader.close()
+//        } catch (e: Exception) {
+//            Log.e("CameraDebug", "Error closing image reader", e)
+//        }
+//        try {
+//            scope.cancel()
+//            model.close()
+//        } catch (e: Exception) {
+//            Log.e("Model", "Error closing model", e)
+//        }
+//        try {
+//            backgroundThread.quitSafely()
+//        } catch (e: Exception) {
+//            Log.e("CameraDebug", "Error quitting background thread", e)
+//        }
+//        timeUpdateHandler.removeCallbacks(timeUpdateRunnable)
+//    }
 
     override fun onDestroy() {
         super.onDestroy()
@@ -846,7 +1182,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         // Make sure the activity is still alive
         if (!isFinishing && !isDestroyed) {
             runOnUiThread {
-                // 🔒 Safely try to find the icon and update it
+                // Safely try to find the icon and update it
                 val eyeIcon = findViewById<ImageView?>(R.id.drowsinessStatusIcon)
                 eyeIcon?.setImageResource(
                     if (isEnabled) R.drawable.eye_enabled else R.drawable.eye_disabled
@@ -854,7 +1190,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
             }
         }
 
-        // ✅ Also update the icon in SettingsFragment if it's currently shown
+        // Also update the icon in SettingsFragment if it's currently shown
         val settingsFragment = supportFragmentManager.findFragmentById(R.id.settingsFragmentContainer)
         if (settingsFragment is SettingsFragment) {
             settingsFragment.updateDrowsinessIcon(isEnabled)

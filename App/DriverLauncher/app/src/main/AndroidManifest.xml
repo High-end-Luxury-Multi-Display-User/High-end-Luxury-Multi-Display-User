@@ -11,6 +11,10 @@
     <uses-permission android:name="android.permission.CAMERA" />
 
     <uses-feature android:name="android.hardware.camera" />
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
+
     <uses-feature android:name="android.hardware.camera.any" />
     <uses-feature android:name="android.hardware.camera.autofocus" />
     <uses-feature
@@ -28,6 +32,23 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.car.permission.CAR_CONTROL_AUDIO_VOLUME" />
+    <uses-permission android:name="android.permission.INJECT_EVENTS"
+        tools:ignore="ProtectedPermissions"/>
+    <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS_FULL"
+        tools:ignore="ProtectedPermissions"/>
+    <uses-permission android:name="android.car.permission.CAR_CONTROL_AUDIO_VOLUME" />
+
+    <!--    <privapp-permissions xmlns:android="http://schemas.android.com/apk/res/android"-->
+    <!--        package="com.example.driverlauncher">-->
+    <!--        <permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>-->
+    <!--        <permission android:name="android.permission.MODIFY_PHONE_STATE"/>-->
+    <!--        <permission android:name="android.permission.CAR_VOLUME"/>-->
+    <!--    </privapp-permissions>-->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.MODIFY_PHONE_STATE"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.CAR_VOLUME" />
 
     <uses-permission android:name="android.permission.CHANGE_OVERLAY_PACKAGES" />
     <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS_FULL" />
@@ -67,22 +88,6 @@
             android:exported="false"
             android:foregroundServiceType="microphone" />
 
-<!--        <service-->
-<!--            android:name=".handgesture.CameraCaptureService"-->
-<!--            android:enabled="true"-->
-<!--            android:exported="true"-->
-<!--            android:foregroundServiceType="camera"></service>-->
-
-<!--        <activity-->
-<!--            android:name=".carvitals.CarVitalsActivity"-->
-<!--            android:exported="true"></activity>-->
-<!--        <activity-->
-<!--            android:name=".settings.SettingsActivity"-->
-<!--            android:exported="false" />-->
-<!--        <activity-->
-<!--            android:name=".home.HomeActivity"-->
-<!--            android:exported="true">-->
-<!--        </activity>-->
         <meta-data
             android:name="com.android.resource.overlayable"
             android:resource="@xml/overlayable" />
