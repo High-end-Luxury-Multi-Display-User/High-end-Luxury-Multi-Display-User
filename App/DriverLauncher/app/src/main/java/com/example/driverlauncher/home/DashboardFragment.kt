@@ -55,14 +55,14 @@ class DashboardFragment : Fragment() {
             if (result != null) {
                 val binder = result as IBinder
                 gpsService = IGpsService.Stub.asInterface(binder)
-                Log.d("ServiceBinding", "✅ Bound to IGpsService.")
+                Log.d("ServiceBinding", "Bound to IGpsService.")
                 startAutoUpdate()
             } else {
-                Log.e("ServiceBinding", "❌ Failed to get service binder.")
+                Log.e("ServiceBinding", "Failed to get service binder.")
             }
 
         } catch (e: Exception) {
-            Log.e("ServiceBinding", "❌ Error binding service: ${e.message}", e)
+            Log.e("ServiceBinding", "Error binding service: ${e.message}", e)
         }
     }
 
@@ -123,6 +123,9 @@ class DashboardFragment : Fragment() {
         lastSpeed?.let { previous ->
             if (speed >= 5f) {
                 videoView.start()
+            }
+            else{
+                videoView.pause()
             }
 ////            val delta = kotlin.math.abs(speed - previous)
 //            if (speed >= 5f) {

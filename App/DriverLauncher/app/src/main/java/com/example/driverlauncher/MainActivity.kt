@@ -33,6 +33,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
 import com.example.driverlauncher.carvitals.BatteryFragment
 import com.example.driverlauncher.carvitals.CarVitalsFragment
 import com.example.driverlauncher.carvitals.SeatFragment
@@ -53,7 +55,6 @@ import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.support.image.ops.ResizeOp
 import java.io.BufferedReader
 import java.io.InputStreamReader
-
 import java.text.SimpleDateFormat
 import java.util.*
 import java.lang.reflect.Method
@@ -358,7 +359,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
             }
         }
     }
-
+    
     // Volume UP and Down using shell commands
     private fun executeShellCommand(command: String): Pair<Boolean, String> {
         try {
@@ -399,8 +400,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
             return false
         }
     }
-
-
+    
     private fun bindService() {
         if (isDestroyed) return
         Log.d(TAG, "Binding to service")
@@ -555,7 +555,6 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
             }
         }, backgroundHandler)
     }
-
 
     @SuppressLint("MissingPermission")
     private fun openCamera() {
@@ -835,7 +834,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         )
     }
 
-    override fun onRequestPermissionsResult(
+ override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
         grantResults: IntArray
@@ -898,6 +897,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
             Log.e("TimeUpdate", "Error updating time", e)
         }
     }
+
 
     private fun setLedState(state: Boolean) {
         val value = if (state) 1 else 0
@@ -1061,7 +1061,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         lastCommand = command
         runOnUiThread { handleCommand(command) }
     }
-
+    
     override fun onResultReceived(status: String) {
         if (isDestroyed) return
         Log.d(TAG, "Result received: $status")

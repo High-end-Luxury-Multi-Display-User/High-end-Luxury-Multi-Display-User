@@ -47,7 +47,7 @@ class SettingsFragment : Fragment() {
         themeImage.setOnClickListener @RequiresPermission(Manifest.permission.KILL_BACKGROUND_PROCESSES) {
             toggleOverlayTheme()
         }
-
+        
        //Gesture Switch 
         val gestureContainer = view.findViewById<LinearLayout>(R.id.gesture_container)
         gestureImage = view.findViewById<ImageButton>(R.id.gesture_image)
