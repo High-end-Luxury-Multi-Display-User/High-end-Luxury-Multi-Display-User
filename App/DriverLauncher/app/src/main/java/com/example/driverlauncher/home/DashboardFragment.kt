@@ -55,20 +55,21 @@ class DashboardFragment : Fragment() {
             if (result != null) {
                 val binder = result as IBinder
                 gpsService = IGpsService.Stub.asInterface(binder)
-                Log.d("ServiceBinding", "✅ Bound to IGpsService.")
+                Log.d("ServiceBinding", "Bound to IGpsService.")
                 startAutoUpdate()
             } else {
-                Log.e("ServiceBinding", "❌ Failed to get service binder.")
+                Log.e("ServiceBinding", "Failed to get service binder.")
             }
 
         } catch (e: Exception) {
-            Log.e("ServiceBinding", "❌ Error binding service: ${e.message}", e)
+            Log.e("ServiceBinding", "Error binding service: ${e.message}", e)
         }
     }
 
     private fun startAutoUpdate() {
         handler.post(updateTask)
     }
+
     private val updateTask = object : Runnable {
         override fun run() {
             try {
@@ -81,7 +82,6 @@ class DashboardFragment : Fragment() {
 
                 Log.e("GPS-UPDATE", "RemoteException: ${e.message}", e)
             }
-
             handler.postDelayed(this, updateIntervalMs)
         }
     }
@@ -121,18 +121,24 @@ class DashboardFragment : Fragment() {
         speedView.speedTo(speed, 1000)
 
         lastSpeed?.let { previous ->
-//            val delta = kotlin.math.abs(speed - previous)
             if (speed >= 5f) {
-                if (videoView.isPlaying) {
-                    videoView.pause()
-                    Log.d("VIDEO", "Paused video because speed change Δ=$speed km/h")
-                }
-            } else {
-                if (!videoView.isPlaying) {
-                    videoView.start()
-                    Log.d("VIDEO", "Started video because speed change Δ=$speed km/h")
-                }
+                videoView.start()
             }
+            else{
+                videoView.pause()
+            }
+////            val delta = kotlin.math.abs(speed - previous)
+//            if (speed >= 5f) {
+//                if (videoView.isPlaying) {
+//                    videoView.pause()
+//                    Log.d("VIDEO", "Paused video because speed change Δ=$speed km/h")
+//                }
+//            } else {
+//                if (!videoView.isPlaying) {
+//                    videoView.start()
+//                    Log.d("VIDEO", "Started video because speed change Δ=$speed km/h")
+//                }
+//            }
         }
         lastSpeed = speed
     }

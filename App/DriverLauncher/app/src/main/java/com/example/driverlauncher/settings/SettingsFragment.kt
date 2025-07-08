@@ -23,6 +23,7 @@ import java.io.InputStreamReader
 
 class SettingsFragment : Fragment() {
     lateinit var themeImage : ImageButton
+    lateinit var gestureImage: ImageButton
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -35,7 +36,7 @@ class SettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        Log.i("TAG", "onViewCreated: SettingsFragment")
+        Log.i("SettingsFragment", "onViewCreated: SettingsFragment")
 
         // Theme Switch
         val themeContainer = view.findViewById<LinearLayout>(R.id.theme_container)
@@ -46,25 +47,20 @@ class SettingsFragment : Fragment() {
         themeImage.setOnClickListener @RequiresPermission(Manifest.permission.KILL_BACKGROUND_PROCESSES) {
             toggleOverlayTheme()
         }
+        
        //Gesture Switch 
         val gestureContainer = view.findViewById<LinearLayout>(R.id.gesture_container)
-        val gestureImage = view.findViewById<ImageButton>(R.id.gesture_image)
+        gestureImage = view.findViewById<ImageButton>(R.id.gesture_image)
         gestureContainer.setOnClickListener {
-            toggleImage(gestureImage, R.drawable.gesture, R.drawable.no_gesture)
+//            toggleImage(gestureImage, R.drawable.gesture, R.drawable.no_gesture)
+//            (activity as? MainActivity)?.toggleGesture()
+            toggleGesture()
         }
         gestureImage.setOnClickListener {
-            toggleImage(gestureImage, R.drawable.gesture, R.drawable.no_gesture)
+//            toggleImage(gestureImage, R.drawable.gesture, R.drawable.no_gesture)
+//            (activity as? MainActivity)?.toggleGesture()
+            toggleGesture()
         }
-        
-          // Language Switch
-//        val languageContainer = view?.findViewById<LinearLayout>(R.id.language_container)
-//        val languageImage = view?.findViewById<ImageButton>(R.id.language_image)
-//        languageContainer.setOnClickListener {
-//            toggleImage(languageImage, R.drawable.english, R.drawable.arabic)
-//        }
-//        languageImage.setOnClickListener {
-//            toggleImage(languageImage, R.drawable.english, R.drawable.arabic)
-//        }
 
         val voiceContainer = view.findViewById<LinearLayout>(R.id.voice_container)
         val voiceImage = view.findViewById<ImageButton>(R.id.voice_image)
@@ -75,6 +71,8 @@ class SettingsFragment : Fragment() {
             (activity as? MainActivity)?.toggleService()
         }
 
+        // Update UI based on initial states
+        updateGestureImage()
         updateVoiceImage()
         updateThemeImage(themeImage)
 
@@ -124,9 +122,30 @@ class SettingsFragment : Fragment() {
         view?.findViewById<ImageButton>(R.id.drawsiness_image)?.setImageResource(
             if (enabled) R.drawable.eye_enabled else R.drawable.eye_disabled
         )
-       
-
     }
+
+    private fun toggleGesture() {
+        val mainActivity = activity as? MainActivity
+        if (mainActivity == null || mainActivity.isDestroyed) {
+            Log.w("SettingsFragment", "MainActivity is null or destroyed")
+            return
+        }
+        mainActivity.toggleGesture()
+        updateGestureImage()
+    }
+
+    fun updateGestureImage() {
+        gestureImage.setImageResource(
+            if (MainActivity.isGestureEnable) R.drawable.gesture else R.drawable.no_gesture
+        )
+    }
+
+//    fun updateGestureImage() {
+//        val isTrue = MainActivity.isGestureEnable
+//        view?.findViewById<ImageButton>(R.id.gesture_image)?.setImageResource(
+//            if (isTrue) R.drawable.gesture else R.drawable.no_gesture
+//        )
+//    }
 
     fun updateVoiceImage() {
         val isRunning = MainActivity.isServiceRunning

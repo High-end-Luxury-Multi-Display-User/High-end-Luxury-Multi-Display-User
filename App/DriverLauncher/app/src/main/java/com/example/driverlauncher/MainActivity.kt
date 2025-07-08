@@ -2,6 +2,8 @@ package com.example.driverlauncher
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.car.Car
+import android.car.hardware.property.CarPropertyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -40,7 +42,7 @@ import com.example.driverlauncher.drawsiness.EyeDetectionService
 import com.example.driverlauncher.handgesture.YuvToRgbConverter
 import com.example.driverlauncher.home.DashboardFragment
 import com.example.driverlauncher.home.NavigationFragment
-
+import com.example.driverlauncher.ml.ModelMetadata
 import com.example.driverlauncher.settings.SettingsFragment
 import com.example.driverlauncher.voskva.VoskRecognitionService
 import kotlinx.coroutines.CoroutineScope
@@ -53,7 +55,6 @@ import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.support.image.ops.ResizeOp
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import org.tensorflow.lite.support.metadata.schema.ModelMetadata
 import java.text.SimpleDateFormat
 import java.util.*
 import java.lang.reflect.Method
@@ -62,6 +63,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     companion object {
         const val PERMISSIONS_REQUEST_RECORD_AUDIO = 1
         var isServiceRunning = false
+        var isGestureEnable = false
         var voskService: VoskRecognitionService? = null
         var isBound = false
         var lastCommand = ""
@@ -107,47 +109,6 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     private val iconRevertDelay = 3000L
     private val gestureDebounceTime = 1000L
     private lateinit var ic_volume:ImageView
-
-
-    private fun executeShellCommand(command: String): Pair<Boolean, String> {
-        try {
-            // Use reflection to invoke Runtime.getRuntime().exec
-            val runtimeClass = Class.forName("java.lang.Runtime")
-            val getRuntimeMethod: Method = runtimeClass.getDeclaredMethod("getRuntime")
-            val runtime: Any = getRuntimeMethod.invoke(null) // Get Runtime instance
-            val execMethod: Method = runtimeClass.getDeclaredMethod("exec", String::class.java)
-            val process: Process = execMethod.invoke(runtime, command) as Process
-
-            val output = BufferedReader(InputStreamReader(process.inputStream)).use { it.readText() }
-            val error = BufferedReader(InputStreamReader(process.errorStream)).use { it.readText() }
-            val exitCode = process.waitFor()
-            if (exitCode == 0) {
-                Log.i("ExecCommand", "Executed shell command via reflection: $command, output: $output")
-                return Pair(true, output)
-            } else {
-                Log.e("ExecCommand", "Shell command failed: $command, error: $error, exit code: $exitCode")
-                return Pair(false, error)
-            }
-        } catch (e: Exception) {
-            Log.e("ExecCommand", "Failed to execute shell command via reflection: ${e.message}", e)
-            return Pair(false, e.message ?: "Unknown error")
-        }
-    }
-    private fun executeCommandViaReflection(command: String): Boolean {
-        try {
-            val runtimeClass = Class.forName("java.lang.Runtime")
-            val getRuntimeMethod: Method = runtimeClass.getDeclaredMethod("getRuntime")
-            val runtime: Any = getRuntimeMethod.invoke(null) // Get Runtime instance
-            val execMethod: Method = runtimeClass.getDeclaredMethod("exec", String::class.java)
-            val process: Process = execMethod.invoke(runtime, command) as Process
-            val exitCode = process.waitFor()
-            Log.d("Reflection", "Command executed: $command, Exit code: $exitCode")
-            return exitCode == 0
-        } catch (e: Exception) {
-            Log.e("Reflection", "Failed to execute command via reflection: ${e.message}", e)
-            return false
-        }
-    }
 
     private var currentScreen = Screen.HOME // Track current screen state
     enum class Screen {
@@ -287,26 +248,12 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         updateTime()
         timeUpdateHandler.postDelayed(timeUpdateRunnable, 60000)
 
-        // Camera Gesture Model
+        /********************** Camera Gesture Model ************************/
         model = ModelMetadata.newInstance(this)
         imageProcessor = ImageProcessor.Builder()
             .add(ResizeOp(224, 224, ResizeOp.ResizeMethod.BILINEAR))
             .build()
         checkCameraPermission()
-
-        ic_volume.setOnClickListener {
-            val success = executeCommandViaReflection("input keyevent 24")
-            if (success) {
-                Log.d("Reflection", "Volume up command executed")
-                updateVolumeIcon()
-            } else {
-                Log.e("Reflection", "Failed to execute volume up command")
-                runOnUiThread {
-                    Toast.makeText(this, "Failed to adjust volume", Toast.LENGTH_SHORT).show()
-                }
-            }
-            executeShellCommand("input keyevent 24")
-        }
 
         /***************Drawsiness**************/
         startServiceOnlyOnce()
@@ -330,7 +277,6 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         userIcon?.setOnClickListener {
             startUserPickerActivity()
         }
-
         updateProfileName()
     }
 
@@ -413,7 +359,48 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
             }
         }
     }
+    
+    // Volume UP and Down using shell commands
+    private fun executeShellCommand(command: String): Pair<Boolean, String> {
+        try {
+            // Use reflection to invoke Runtime.getRuntime().exec
+            val runtimeClass = Class.forName("java.lang.Runtime")
+            val getRuntimeMethod: Method = runtimeClass.getDeclaredMethod("getRuntime")
+            val runtime: Any = getRuntimeMethod.invoke(null) // Get Runtime instance
+            val execMethod: Method = runtimeClass.getDeclaredMethod("exec", String::class.java)
+            val process: Process = execMethod.invoke(runtime, command) as Process
 
+            val output = BufferedReader(InputStreamReader(process.inputStream)).use { it.readText() }
+            val error = BufferedReader(InputStreamReader(process.errorStream)).use { it.readText() }
+            val exitCode = process.waitFor()
+            if (exitCode == 0) {
+                Log.i("ExecCommand", "Executed shell command via reflection: $command, output: $output")
+                return Pair(true, output)
+            } else {
+                Log.e("ExecCommand", "Shell command failed: $command, error: $error, exit code: $exitCode")
+                return Pair(false, error)
+            }
+        } catch (e: Exception) {
+            Log.e("ExecCommand", "Failed to execute shell command via reflection: ${e.message}", e)
+            return Pair(false, e.message ?: "Unknown error")
+        }
+    }
+    private fun executeCommandViaReflection(command: String): Boolean {
+        try {
+            val runtimeClass = Class.forName("java.lang.Runtime")
+            val getRuntimeMethod: Method = runtimeClass.getDeclaredMethod("getRuntime")
+            val runtime: Any = getRuntimeMethod.invoke(null) // Get Runtime instance
+            val execMethod: Method = runtimeClass.getDeclaredMethod("exec", String::class.java)
+            val process: Process = execMethod.invoke(runtime, command) as Process
+            val exitCode = process.waitFor()
+            Log.d("Reflection", "Command executed: $command, Exit code: $exitCode")
+            return exitCode == 0
+        } catch (e: Exception) {
+            Log.e("Reflection", "Failed to execute command via reflection: ${e.message}", e)
+            return false
+        }
+    }
+    
     private fun bindService() {
         if (isDestroyed) return
         Log.d(TAG, "Binding to service")
@@ -453,9 +440,6 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         return isEyeDetectionEnabled
     }
 
-    private fun updateToggleButton() {
-        Log.d(TAG, "Updating toggle button: isEnabled=$isEyeDetectionEnabled")
-    }
     private fun checkCameraPermission() {
         if (ContextCompat.checkSelfPermission(
                 this,
@@ -468,15 +452,8 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
                 CAMERA_PERMISSION_CODE
             )
         } else {
-//            setupCamera()
         }
     }
-
-//    private fun setupCamera() {
-//        startBackgroundThread()
-//        setupImageReader()
-//        openCamera()
-//    }
 
     private fun startBackgroundThread() {
         backgroundThread = HandlerThread("CameraBackgroundThread")
@@ -514,13 +491,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
                                             ) {
                                                 when (it.label) {
                                                     "scrollup" -> {
-//                                                        try {
-//                                                            Runtime.getRuntime().exec(arrayOf("sh", "-c", "input keyevent 24"))
-//                                                        } catch (e: Exception) {
-//                                                            Log.e("VolumeControl", "Failed to execute keyevent", e)
-//                                                        }
-
-                                                        //audioManager.adjustVolume(AudioManager.ADJUST_MUTE, AudioManager.FLAG_SHOW_UI)
+                                                        audioManager.adjustVolume(AudioManager.ADJUST_MUTE, AudioManager.FLAG_SHOW_UI)
                                                         runOnUiThread {
                                                             Toast.makeText(this@MainActivity, "Mute", Toast.LENGTH_SHORT).show()
                                                             ic_volume.setImageResource(R.drawable.ic_mute)
@@ -554,19 +525,20 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
                                                         resetGestureTracking()
                                                     }
                                                     else -> {
-                                                        runOnUiThread { updateVolumeIcon() }
+//                                                        runOnUiThread { updateVolumeIcon() }
                                                     }
                                                 }
                                             } else {
-                                                runOnUiThread { updateVolumeIcon() }
+//                                                runOnUiThread { updateVolumeIcon() }
                                             }
                                         } else {
                                             Log.i("Gesture", "No gesture confident enough (max score: ${it.score})")
+                                            runOnUiThread { updateVolumeIcon() }
                                             resetGestureTracking()
                                         }
                                     }
                                 } else {
-                                    runOnUiThread { updateVolumeIcon() }
+//                                    runOnUiThread { updateVolumeIcon() }
                                     resetGestureTracking()
                                 }
                             }
@@ -584,112 +556,6 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         }, backgroundHandler)
     }
 
-//    private fun setupImageReader() {
-//        imageReader = ImageReader.newInstance(640, 480, android.graphics.ImageFormat.YUV_420_888, 2)
-//        imageReader.setOnImageAvailableListener({ reader ->
-//            val image = reader.acquireLatestImage() ?: return@setOnImageAvailableListener
-//            val bitmap = YuvToRgbConverter.yuvToRgb(this, image)
-//            image.close()
-//
-//            scope.launch {
-//                try {
-//                    val tensorImage = imageProcessor.process(TensorImage.fromBitmap(bitmap))
-//                    val outputs = model.process(tensorImage)
-//                    val detectionResult = outputs.probabilityAsCategoryList
-//
-//                    if (detectionResult.isNotEmpty()) {
-//                        val bestResult = detectionResult.maxByOrNull { it.score }
-//                        bestResult?.let {
-//                            if (it.score > 0.8f) {
-//                                Log.i("Gesture", "Label: ${it.label}, DisplayName: ${it.displayName}, Score: ${it.score}")
-//                                val currentTime = System.currentTimeMillis()
-//                                if (currentTime - lastGestureTime > gestureDebounceTime) {
-//                                    when (it.label) {
-//                                        "scrollup" -> {
-//                                            audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
-//                                            runOnUiThread {
-//                                                Toast.makeText(this@MainActivity, "Volume Up", Toast.LENGTH_SHORT).show()
-//                                            }
-//                                            lastGestureTime = currentTime
-//                                        }
-//                                        "down" -> {
-//                                            audioManager.adjustVolume(AudioManager.ADJUST_MUTE, AudioManager.FLAG_SHOW_UI)
-//                                            runOnUiThread {
-//                                                Toast.makeText(this@MainActivity, "Volume Down", Toast.LENGTH_SHORT).show()
-//                                            }
-//                                            lastGestureTime = currentTime
-//                                        }
-//                                        "up" -> {
-//                                            audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
-//                                            runOnUiThread {
-//                                                Toast.makeText(this@MainActivity, "Volume Up", Toast.LENGTH_SHORT).show()
-//                                            }
-//                                            lastGestureTime = currentTime
-//                                        }
-//
-//                                        else -> {}
-//                                    }
-//                                } else {
-//
-//                                }
-//                            } else {
-//                                Log.i("Gesture", "No gesture confident enough (max score: ${it.score})")
-//                            }
-//                        }
-//                    }
-//                } catch (e: Exception) {
-//                    Log.e("Gesture", "Frame processing error", e)
-//                }
-//            }
-//        }, backgroundHandler)
-//    }
-    override fun onDestroy() {
-        super.onDestroy()
-        try {
-            captureSession?.stopRepeating()
-            captureSession?.close()
-            captureSession = null
-        } catch (e: Exception) {
-            Log.e("CameraDebug", "Error stopping capture session", e)
-        }
-        try {
-            cameraDevice?.close()
-            cameraDevice = null
-        } catch (e: Exception) {
-            Log.e("CameraDebug", "Error closing camera device", e)
-        }
-        try {
-            imageReader.setOnImageAvailableListener(null, null)
-            imageReader.close()
-        } catch (e: Exception) {
-            Log.e("CameraDebug", "Error closing image reader", e)
-        }
-        try {
-            scope.cancel()
-            isModelClosed = true
-            model.close()
-        } catch (e: Exception) {
-            Log.e("Model", "Error closing model", e)
-        }
-        try {
-            backgroundThread.quitSafely()
-        } catch (e: Exception) {
-            Log.e("CameraDebug", "Error quitting background thread", e)
-        }
-        timeUpdateHandler.removeCallbacks(timeUpdateRunnable)
-    }
-    // Helper function to update volume icon based on current audio state
-    private fun updateVolumeIcon() {
-        val isMuted = audioManager.isStreamMute(AudioManager.STREAM_MUSIC) ||
-                audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) == 0
-        ic_volume.setImageResource(if (isMuted) R.drawable.ic_mute else R.drawable.ic_volume)
-    }
-
-    // Helper function to reset gesture tracking
-    private fun resetGestureTracking() {
-        gestureSequenceCount = 0
-        lastDetectedGesture = null
-    }
     @SuppressLint("MissingPermission")
     private fun openCamera() {
         val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
@@ -807,13 +673,101 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         }
     }
 
-//    private fun handleNoCameraAvailable(reason: String) {
-//        runOnUiThread {
-//            Toast.makeText(this, "Cannot enable gesture recognition: $reason", Toast.LENGTH_LONG).show()
-//        }
-//        isGestureRecognitionEnabled = false
-//        cleanupCameraResources()
-//    }
+    fun toggleGesture() {
+        isGestureEnable = !isGestureEnable
+        Log.d(TAG, "Toggling gesture detection: isGestureEnable=$isGestureEnable")
+
+        if (isGestureEnable) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                setupCamera()
+                Log.d(TAG, "Gesture detection enabled")
+            } else {
+                isGestureEnable = false // Revert if permission is not granted
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.CAMERA),
+                    CAMERA_PERMISSION_CODE
+                )
+                Toast.makeText(this, "Camera permission required for gesture detection", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            stopGestureDetection()
+            Log.d(TAG, "Gesture detection disabled")
+        }
+
+        // Update SettingsFragment UI
+        supportFragmentManager.fragments.forEach {
+            if (it is SettingsFragment) {
+                it.updateGestureImage()
+            }
+        }
+    }
+
+    private fun setupCamera() {
+        try {
+            startBackgroundThread()
+            setupImageReader()
+            openCamera()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to set up camera: ${e.message}", e)
+            isGestureEnable = false
+            stopGestureDetection()
+            Toast.makeText(this, "Failed to enable gesture detection", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun stopGestureDetection() {
+        try {
+            captureSession?.stopRepeating()
+            captureSession?.close()
+            captureSession = null
+        } catch (e: Exception) {
+            Log.e(TAG, "Error stopping capture session: ${e.message}", e)
+        }
+        try {
+            cameraDevice?.close()
+            cameraDevice = null
+        } catch (e: Exception) {
+            Log.e(TAG, "Error closing camera device: ${e.message}", e)
+        }
+        try {
+            imageReader.setOnImageAvailableListener(null, null)
+            imageReader.close()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error closing image reader: ${e.message}", e)
+        }
+        try {
+            backgroundThread.quitSafely()
+            backgroundHandler.removeCallbacksAndMessages(null)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error quitting background thread: ${e.message}", e)
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        stopGestureDetection()
+        try {
+            scope.cancel()
+            isModelClosed = true
+            model.close()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error closing model: ${e.message}", e)
+        }
+        timeUpdateHandler.removeCallbacks(timeUpdateRunnable)
+    }
+    // Helper function to update volume icon based on current audio state
+    private fun updateVolumeIcon() {
+        val isMuted = audioManager.isStreamMute(AudioManager.STREAM_MUSIC) ||
+                audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) == 0
+        ic_volume.setImageResource(if (isMuted) R.drawable.ic_mute else R.drawable.ic_volume)
+    }
+
+    // Helper function to reset gesture tracking
+    private fun resetGestureTracking() {
+        gestureSequenceCount = 0
+        lastDetectedGesture = null
+    }
 
     private fun showHomeFragments() {
         supportFragmentManager.beginTransaction()
@@ -880,19 +834,29 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         )
     }
 
-    override fun onRequestPermissionsResult(
+ override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == CAMERA_PERMISSION_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-         //   setupCamera()
-            Log.d(TAG, "Camera permission granted")
-            bindService()
-        }else {
-            Log.w(TAG, "Camera permission denied")
-            Toast.makeText(this, "Camera permission denied", Toast.LENGTH_LONG).show()
+        if (requestCode == CAMERA_PERMISSION_CODE && grantResults.isNotEmpty()) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "Camera permission granted")
+                if (isGestureEnable) {
+                    setupCamera()
+                }
+            } else {
+                Log.w(TAG, "Camera permission denied")
+                isGestureEnable = false
+                Toast.makeText(this, "Camera permission denied", Toast.LENGTH_LONG).show()
+                // Update SettingsFragment UI
+                supportFragmentManager.fragments.forEach {
+                    if (it is SettingsFragment) {
+                        it.updateGestureImage()
+                    }
+                }
+            }
         }
     }
 
@@ -957,55 +921,6 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
 
     private fun updateLightIcon(state: Boolean) {
         lightIcon.setImageResource(if (state) R.drawable.light_on else R.drawable.light_off)
-    }
-
-//    override fun onDestroy() {
-//        super.onDestroy()
-//        // Stop camera capture and clean up resources
-//        try {
-//            captureSession?.stopRepeating()
-//            captureSession?.close()
-//            captureSession = null
-//        } catch (e: Exception) {
-//            Log.e("CameraDebug", "Error stopping capture session", e)
-//        }
-//        try {
-//            cameraDevice?.close()
-//            cameraDevice = null
-//        } catch (e: Exception) {
-//            Log.e("CameraDebug", "Error closing camera device", e)
-//        }
-//        try {
-//            imageReader.setOnImageAvailableListener(null, null) // Detach listener
-//            imageReader.close()
-//        } catch (e: Exception) {
-//            Log.e("CameraDebug", "Error closing image reader", e)
-//        }
-//        try {
-//            scope.cancel()
-//            model.close()
-//        } catch (e: Exception) {
-//            Log.e("Model", "Error closing model", e)
-//        }
-//        try {
-//            backgroundThread.quitSafely()
-//        } catch (e: Exception) {
-//            Log.e("CameraDebug", "Error quitting background thread", e)
-//        }
-//        timeUpdateHandler.removeCallbacks(timeUpdateRunnable)
-//    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        isDestroyed = true
-        eyeDetectionService?.setDetectionCallback(null)
-        timeUpdateHandler.removeCallbacks(timeUpdateRunnable)
-        scope.cancel()
-//        model.close()
-        imageReader.close()
-        cameraDevice?.close()
-        captureSession?.close()
-        backgroundThread.quitSafely()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -1118,7 +1033,6 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         supportFragmentManager.fragments.forEach {
             if (it is SettingsFragment) it.updateVoiceImage()
         }
-
     }
 
     private fun startServiceOnlyOnce() {
@@ -1147,6 +1061,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         lastCommand = command
         runOnUiThread { handleCommand(command) }
     }
+    
     override fun onResultReceived(status: String) {
         if (isDestroyed) return
         Log.d(TAG, "Result received: $status")
@@ -1163,8 +1078,6 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
             }
         }
     }
-
-
 
     override fun onErrorReceived(error: String) {
         Log.e(TAG, "Error received: $error")

@@ -1,0 +1,10 @@
+java_library {
+    name: "ReLinker",
+    srcs: ["src/main/java/**/*.java"],
+    sdk_version: "current",
+
+    visibility: [
+        "//vendor/iti/DriverLauncher/app/src/main:__subpackages__",
+    ],
+}
+
