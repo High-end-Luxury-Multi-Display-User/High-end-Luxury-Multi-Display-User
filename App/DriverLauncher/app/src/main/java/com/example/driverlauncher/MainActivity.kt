@@ -104,7 +104,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     private lateinit var audioManager: AudioManager
     private var gestureSequenceCount = 0
     private var lastDetectedGesture: String? = null
-    private val requiredSequentialFrames = 2
+    private val requiredSequentialFrames = 3
     private var lastGestureTime = 0L
     private val iconRevertDelay = 3000L
     private val gestureDebounceTime = 1000L
@@ -486,29 +486,31 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
                                                 lastDetectedGesture = it.label
                                                 gestureSequenceCount = 1
                                             }
-                                            if (gestureSequenceCount >= requiredSequentialFrames &&
+                                            if (gestureSequenceCount == requiredSequentialFrames &&
                                                 currentTime - lastGestureTime > gestureDebounceTime
                                             ) {
                                                 when (it.label) {
                                                     "scrollup" -> {
-                                                        audioManager.adjustVolume(AudioManager.ADJUST_MUTE, AudioManager.FLAG_SHOW_UI)
-                                                        runOnUiThread {
-                                                            Toast.makeText(this@MainActivity, "Mute", Toast.LENGTH_SHORT).show()
-                                                            ic_volume.setImageResource(R.drawable.ic_mute)
-                                                            updateVolumeIcon()
-                                                        }
+                                                        playAudio(R.raw.enginestop)
+//                                                        audioManager.adjustVolume(AudioManager.ADJUST_MUTE, AudioManager.FLAG_SHOW_UI)
+//                                                        runOnUiThread {
+//                                                            Toast.makeText(this@MainActivity, "Mute", Toast.LENGTH_SHORT).show()
+//                                                            ic_volume.setImageResource(R.drawable.ic_mute)
+//                                                            updateVolumeIcon()
+//                                                        }
                                                         lastGestureTime = currentTime
                                                         resetGestureTracking()
                                                     }
                                                     "down" -> {
-                                                        audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
-                                                        runOnUiThread {
-                                                            Toast.makeText(this@MainActivity, "Volume Down", Toast.LENGTH_SHORT).show()
-                                                            ic_volume.setImageResource(R.drawable.ic_decrease)
-                                                            timeUpdateHandler.postDelayed({
-                                                                updateVolumeIcon()
-                                                            }, iconRevertDelay)
-                                                        }
+                                                        playAudio(R.raw.enginestart)
+//                                                        audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
+//                                                        runOnUiThread {
+//                                                            Toast.makeText(this@MainActivity, "Volume Down", Toast.LENGTH_SHORT).show()
+//                                                            ic_volume.setImageResource(R.drawable.ic_decrease)
+//                                                            timeUpdateHandler.postDelayed({
+//                                                                updateVolumeIcon()
+//                                                            }, iconRevertDelay)
+//                                                        }
                                                         lastGestureTime = currentTime
                                                         resetGestureTracking()
                                                     }
