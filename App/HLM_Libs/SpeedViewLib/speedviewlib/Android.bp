@@ -1,0 +1,10 @@
+android_library {
+    name: "SpeedViewLib",
+    srcs: ["src/main/java/**/*.kt"],
+    resource_dirs: ["src/main/res"],
+    manifest: "src/main/AndroidManifest.xml",
+    sdk_version: "current",
+    min_sdk_version: "21",
+    static_libs: [],
+}
+

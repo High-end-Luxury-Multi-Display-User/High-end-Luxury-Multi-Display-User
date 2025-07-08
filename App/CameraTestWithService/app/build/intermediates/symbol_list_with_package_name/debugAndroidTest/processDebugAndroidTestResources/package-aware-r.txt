@@ -1,0 +1,3 @@
+android.vendor.camerawithservice.test
+style WhiteBackgroundDialogTheme
+style WhiteBackgroundTheme
