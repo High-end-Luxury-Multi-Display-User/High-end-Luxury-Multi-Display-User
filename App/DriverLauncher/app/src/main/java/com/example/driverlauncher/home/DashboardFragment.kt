@@ -69,6 +69,7 @@ class DashboardFragment : Fragment() {
     private fun startAutoUpdate() {
         handler.post(updateTask)
     }
+
     private val updateTask = object : Runnable {
         override fun run() {
             try {
@@ -81,7 +82,6 @@ class DashboardFragment : Fragment() {
 
                 Log.e("GPS-UPDATE", "RemoteException: ${e.message}", e)
             }
-
             handler.postDelayed(this, updateIntervalMs)
         }
     }
@@ -121,18 +121,21 @@ class DashboardFragment : Fragment() {
         speedView.speedTo(speed, 1000)
 
         lastSpeed?.let { previous ->
-            val delta = kotlin.math.abs(speed - previous)
-            if (delta <= 5f) {
-                if (videoView.isPlaying) {
-                    videoView.pause()
-                    Log.d("VIDEO", "Paused video because speed change Δ=$delta km/h")
-                }
-            } else {
-                if (!videoView.isPlaying) {
-                    videoView.start()
-                    Log.d("VIDEO", "Started video because speed change Δ=$delta km/h")
-                }
+            if (speed >= 5f) {
+                videoView.start()
             }
+////            val delta = kotlin.math.abs(speed - previous)
+//            if (speed >= 5f) {
+//                if (videoView.isPlaying) {
+//                    videoView.pause()
+//                    Log.d("VIDEO", "Paused video because speed change Δ=$speed km/h")
+//                }
+//            } else {
+//                if (!videoView.isPlaying) {
+//                    videoView.start()
+//                    Log.d("VIDEO", "Started video because speed change Δ=$speed km/h")
+//                }
+//            }
         }
         lastSpeed = speed
     }

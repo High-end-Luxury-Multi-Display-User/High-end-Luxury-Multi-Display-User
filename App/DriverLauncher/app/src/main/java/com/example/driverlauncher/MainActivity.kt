@@ -2,6 +2,8 @@ package com.example.driverlauncher
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.car.Car
+import android.car.hardware.property.CarPropertyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -34,6 +36,7 @@ import androidx.core.content.ContextCompat
 import com.example.driverlauncher.carvitals.BatteryFragment
 import com.example.driverlauncher.carvitals.CarVitalsFragment
 import com.example.driverlauncher.carvitals.SeatFragment
+import com.example.driverlauncher.drawsiness.EyeDetectionService
 import com.example.driverlauncher.handgesture.YuvToRgbConverter
 import com.example.driverlauncher.home.DashboardFragment
 import com.example.driverlauncher.home.NavigationFragment
@@ -50,26 +53,37 @@ import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.support.image.ops.ResizeOp
 import java.io.BufferedReader
 import java.io.InputStreamReader
+
 import java.text.SimpleDateFormat
 import java.util.*
 import java.lang.reflect.Method
 
-class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCallback {
+class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCallback ,EyeDetectionService.DetectionCallback{
     companion object {
         const val PERMISSIONS_REQUEST_RECORD_AUDIO = 1
         var isServiceRunning = false
+        var isGestureEnable = false
         var voskService: VoskRecognitionService? = null
         var isBound = false
         var lastCommand = ""
+        private const val TAG = "MainActivity"
+        private const val PERMISSIONS_REQUEST_CAMERA = 100
     }
-//    private val VENDOR_EXTENSION_LIGHT_CONTROL_PROPERTY: Int = 0x21400106
-//    private val areaID = 0
-//    private lateinit var car: Car
-//    private lateinit var carPropertyManager: CarPropertyManager
+
     private var isModelClosed = false // Track model state
+
+    private var isDestroyed = false
+    private var eyeDetectionService: EyeDetectionService? = null
+     var isBoundEye = true
+     var isEyeDetectionEnabled = false
+    private val VENDOR_EXTENSION_LIGHT_CONTROL_PROPERTY: Int = 0x21400106
+    private val areaID = 0
+    private lateinit var car: Car
+    private lateinit var carPropertyManager: CarPropertyManager
     private var ledState = false // false = off, true = on
     private lateinit var lightIcon: ImageView
     private lateinit var timeTextView: TextView
+    private lateinit var drowsinessStatusIcon: ImageView
     private val timeUpdateHandler = Handler(Looper.getMainLooper())
     private lateinit var timeUpdateRunnable: Runnable
     private lateinit var homeIcon: ImageView
@@ -95,68 +109,28 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     private val gestureDebounceTime = 1000L
     private lateinit var ic_volume:ImageView
 
-
-    private fun executeShellCommand(command: String): Pair<Boolean, String> {
-        try {
-            // Use reflection to invoke Runtime.getRuntime().exec
-            val runtimeClass = Class.forName("java.lang.Runtime")
-            val getRuntimeMethod: Method = runtimeClass.getDeclaredMethod("getRuntime")
-            val runtime: Any = getRuntimeMethod.invoke(null) // Get Runtime instance
-            val execMethod: Method = runtimeClass.getDeclaredMethod("exec", String::class.java)
-            val process: Process = execMethod.invoke(runtime, command) as Process
-
-            val output = BufferedReader(InputStreamReader(process.inputStream)).use { it.readText() }
-            val error = BufferedReader(InputStreamReader(process.errorStream)).use { it.readText() }
-            val exitCode = process.waitFor()
-            if (exitCode == 0) {
-                Log.i("ExecCommand", "Executed shell command via reflection: $command, output: $output")
-                return Pair(true, output)
-            } else {
-                Log.e("ExecCommand", "Shell command failed: $command, error: $error, exit code: $exitCode")
-                return Pair(false, error)
-            }
-        } catch (e: Exception) {
-            Log.e("ExecCommand", "Failed to execute shell command via reflection: ${e.message}", e)
-            return Pair(false, e.message ?: "Unknown error")
-        }
-    }
-    private fun executeCommandViaReflection(command: String): Boolean {
-        try {
-            val runtimeClass = Class.forName("java.lang.Runtime")
-            val getRuntimeMethod: Method = runtimeClass.getDeclaredMethod("getRuntime")
-            val runtime: Any = getRuntimeMethod.invoke(null) // Get Runtime instance
-            val execMethod: Method = runtimeClass.getDeclaredMethod("exec", String::class.java)
-            val process: Process = execMethod.invoke(runtime, command) as Process
-            val exitCode = process.waitFor()
-            Log.d("Reflection", "Command executed: $command, Exit code: $exitCode")
-            return exitCode == 0
-        } catch (e: Exception) {
-            Log.e("Reflection", "Failed to execute command via reflection: ${e.message}", e)
-            return false
-        }
-    }
-//    private fun executeShellCommand(command: String): Pair<Boolean, String> {
-//        try {
-//            val process = Runtime.getRuntime().exec(command)
-//            val output = BufferedReader(InputStreamReader(process.inputStream)).use { it.readText() }
-//            val error = BufferedReader(InputStreamReader(process.errorStream)).use { it.readText() }
-//            val exitCode = process.waitFor()
-//            if (exitCode == 0) {
-//                Log.i("ExecCommand", "Executed shell command: $command, output: $output")
-//                return Pair(true, output)
-//            } else {
-//                Log.e("ExecCommand", "Shell command failed: $command, error: $error, exit code: $exitCode")
-//                return Pair(false, error)
-//            }
-//        } catch (e: Exception) {
-//            Log.e("ExecCommand", "Failed to execute shell command: ${e.message}", e)
-//            return Pair(false, e.message ?: "Unknown error")
-//        }
-//    }
-
     private var currentScreen = Screen.HOME // Track current screen state
     enum class Screen {
         HOME, CAR_VITALS, SETTINGS
+    }
+    private val serviceConnectionEye = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            Log.d(TAG, "Eye Service connected")
+            val binder = service as EyeDetectionService.LocalBinder
+            eyeDetectionService = binder.getService().apply {
+                setDetectionCallback(this@MainActivity)
+            }
+
+            isBoundEye = true
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            Log.d(TAG, "Eye Service disconnected")
+            isBoundEye = false
+            eyeDetectionService = null
+            isEyeDetectionEnabled = false
+
+        }
     }
 
     private val serviceConnection = object : ServiceConnection {
@@ -186,7 +160,9 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         /********************************************/
         // Initialize AudioManager
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-
+        // Drawsiness Icon
+        drowsinessStatusIcon = findViewById(R.id.drowsinessStatusIcon)
+        drowsinessStatusIcon.setImageResource(R.drawable.eye_disabled)
         // Initialize views
         lightIcon = findViewById(R.id.light_icon)
         ic_volume = findViewById(R.id.ic_volume)
@@ -198,14 +174,14 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         carVitalsIcon = findViewById(R.id.icon_car_vitals)
         settingsIcon = findViewById(R.id.icon_settings)
 
-        // Initialize Car API
-//        car = Car.createCar(this.applicationContext)
-//        if (car == null) {
-//            Log.e("LED", "Failed to create Car instance")
-//        } else {
-//            carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
-//            Log.d("LED", "CarPropertyManager initialized")
-//        }
+       //  Initialize Car API
+        car = Car.createCar(this.applicationContext)
+        if (car == null) {
+            Log.e("LED", "Failed to create Car instance")
+        } else {
+            carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
+            Log.d("LED", "CarPropertyManager initialized")
+        }
 
         // Set up light button
         val lightButton = findViewById<LinearLayout>(R.id.light_button)
@@ -271,57 +247,26 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         updateTime()
         timeUpdateHandler.postDelayed(timeUpdateRunnable, 60000)
 
-        // Camera Model
+        /********************** Camera Gesture Model ************************/
         model = ModelMetadata.newInstance(this)
         imageProcessor = ImageProcessor.Builder()
             .add(ResizeOp(224, 224, ResizeOp.ResizeMethod.BILINEAR))
             .build()
         checkCameraPermission()
 
-//        ic_volume.setOnClickListener{
-//            try {
-//                Runtime.getRuntime().exec(arrayOf("sh", "-c", "input keyevent 24"))
-//            } catch (e: Exception) {
-//                Log.e("VolumeControl", "Failed to execute keyevent", e)
-//            }
-//            audioManager.adjustStreamVolume(
-//                AudioManager.STREAM_MUSIC,
-//                AudioManager.ADJUST_RAISE,
-//                AudioManager.FLAG_SHOW_UI
-//            )
-//            val audio = "com.example.driverlauncher"
-//            val userId = 10
-//            try {
-//                val (success, output) = executeShellCommand("adb shell input keyevent 24")
-//                if (success) {
-//                    val enabled = output.lines().any { it.contains("[x] $audio") }
-//                    Log.i("ExecCommand", "Overlay state check: enabled=$enabled, output=$output")
-////                    return enabled
-//                } else {
-//                    Log.w("ExecCommand", "Failed to check overlay state: $output")
-//                }
-//            } catch (e: Exception) {
-//                Log.w("ExecCommand", "Error checking overlay state: ${e.message}")
-//            }
-//            audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
-//            updateVolumeIcon()
-//        }
+        /***************Drawsiness**************/
+        startServiceOnlyOnce()
 
-        ic_volume.setOnClickListener {
-            val success = executeCommandViaReflection("input keyevent 24")
-            if (success) {
-                Log.d("Reflection", "Volume up command executed")
-                updateVolumeIcon()
-            } else {
-                Log.e("Reflection", "Failed to execute volume up command")
-                runOnUiThread {
-                    Toast.makeText(this, "Failed to adjust volume", Toast.LENGTH_SHORT).show()
-                }
-            }
-            executeShellCommand("input keyevent 24")
+        // Request camera permission
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            Log.d(TAG, "Requesting camera permission")
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), PERMISSIONS_REQUEST_CAMERA)
+        } else {
+            Log.d(TAG, "Camera permission already granted")
+            bindService()
         }
 
-
+        /******************UserPicker&UserName**********/
         val userContainer = findViewById<LinearLayout>(R.id.driver_profile)
             ?: throw IllegalStateException("Missing user_container")
         userContainer.setOnClickListener {
@@ -331,7 +276,6 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         userIcon?.setOnClickListener {
             startUserPickerActivity()
         }
-
         updateProfileName()
     }
 
@@ -415,6 +359,87 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         }
     }
 
+    // Volume UP and Down using shell commands
+    private fun executeShellCommand(command: String): Pair<Boolean, String> {
+        try {
+            // Use reflection to invoke Runtime.getRuntime().exec
+            val runtimeClass = Class.forName("java.lang.Runtime")
+            val getRuntimeMethod: Method = runtimeClass.getDeclaredMethod("getRuntime")
+            val runtime: Any = getRuntimeMethod.invoke(null) // Get Runtime instance
+            val execMethod: Method = runtimeClass.getDeclaredMethod("exec", String::class.java)
+            val process: Process = execMethod.invoke(runtime, command) as Process
+
+            val output = BufferedReader(InputStreamReader(process.inputStream)).use { it.readText() }
+            val error = BufferedReader(InputStreamReader(process.errorStream)).use { it.readText() }
+            val exitCode = process.waitFor()
+            if (exitCode == 0) {
+                Log.i("ExecCommand", "Executed shell command via reflection: $command, output: $output")
+                return Pair(true, output)
+            } else {
+                Log.e("ExecCommand", "Shell command failed: $command, error: $error, exit code: $exitCode")
+                return Pair(false, error)
+            }
+        } catch (e: Exception) {
+            Log.e("ExecCommand", "Failed to execute shell command via reflection: ${e.message}", e)
+            return Pair(false, e.message ?: "Unknown error")
+        }
+    }
+    private fun executeCommandViaReflection(command: String): Boolean {
+        try {
+            val runtimeClass = Class.forName("java.lang.Runtime")
+            val getRuntimeMethod: Method = runtimeClass.getDeclaredMethod("getRuntime")
+            val runtime: Any = getRuntimeMethod.invoke(null) // Get Runtime instance
+            val execMethod: Method = runtimeClass.getDeclaredMethod("exec", String::class.java)
+            val process: Process = execMethod.invoke(runtime, command) as Process
+            val exitCode = process.waitFor()
+            Log.d("Reflection", "Command executed: $command, Exit code: $exitCode")
+            return exitCode == 0
+        } catch (e: Exception) {
+            Log.e("Reflection", "Failed to execute command via reflection: ${e.message}", e)
+            return false
+        }
+    }
+
+
+    private fun bindService() {
+        if (isDestroyed) return
+        Log.d(TAG, "Binding to service")
+        bindService(Intent(this, EyeDetectionService::class.java), serviceConnectionEye, Context.BIND_AUTO_CREATE)
+    }
+
+    fun toggleEyeService(): Boolean {
+        val intent = Intent(this, EyeDetectionService::class.java).apply {
+            action = if (isEyeDetectionEnabled) {
+                EyeDetectionService.ACTION_STOP_DETECTION
+            } else {
+                EyeDetectionService.ACTION_START_DETECTION
+            }
+        }
+        startService(intent)
+
+        // Only update callback if service is bound
+        if (isBoundEye && eyeDetectionService != null) {
+            if (isEyeDetectionEnabled) {
+                eyeDetectionService?.setDetectionCallback(null)
+            } else {
+                eyeDetectionService?.setDetectionCallback(this)
+            }
+        } else {
+            Log.w(TAG, "toggleEyeService: EyeDetectionService not yet bound")
+        }
+
+        isEyeDetectionEnabled = !isEyeDetectionEnabled
+
+        // Update dashboard icon immediately
+        runOnUiThread {
+            drowsinessStatusIcon.setImageResource(
+                if (isEyeDetectionEnabled) R.drawable.eye_enabled else R.drawable.eye_disabled
+            )
+        }
+
+        return isEyeDetectionEnabled
+    }
+
     private fun checkCameraPermission() {
         if (ContextCompat.checkSelfPermission(
                 this,
@@ -427,14 +452,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
                 CAMERA_PERMISSION_CODE
             )
         } else {
-            setupCamera()
         }
-    }
-
-    private fun setupCamera() {
-        startBackgroundThread()
-        setupImageReader()
-        openCamera()
     }
 
     private fun startBackgroundThread() {
@@ -473,13 +491,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
                                             ) {
                                                 when (it.label) {
                                                     "scrollup" -> {
-//                                                        try {
-//                                                            Runtime.getRuntime().exec(arrayOf("sh", "-c", "input keyevent 24"))
-//                                                        } catch (e: Exception) {
-//                                                            Log.e("VolumeControl", "Failed to execute keyevent", e)
-//                                                        }
-
-                                                        //audioManager.adjustVolume(AudioManager.ADJUST_MUTE, AudioManager.FLAG_SHOW_UI)
+                                                        audioManager.adjustVolume(AudioManager.ADJUST_MUTE, AudioManager.FLAG_SHOW_UI)
                                                         runOnUiThread {
                                                             Toast.makeText(this@MainActivity, "Mute", Toast.LENGTH_SHORT).show()
                                                             ic_volume.setImageResource(R.drawable.ic_mute)
@@ -513,19 +525,20 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
                                                         resetGestureTracking()
                                                     }
                                                     else -> {
-                                                        runOnUiThread { updateVolumeIcon() }
+//                                                        runOnUiThread { updateVolumeIcon() }
                                                     }
                                                 }
                                             } else {
-                                                runOnUiThread { updateVolumeIcon() }
+//                                                runOnUiThread { updateVolumeIcon() }
                                             }
                                         } else {
                                             Log.i("Gesture", "No gesture confident enough (max score: ${it.score})")
+                                            runOnUiThread { updateVolumeIcon() }
                                             resetGestureTracking()
                                         }
                                     }
                                 } else {
-                                    runOnUiThread { updateVolumeIcon() }
+//                                    runOnUiThread { updateVolumeIcon() }
                                     resetGestureTracking()
                                 }
                             }
@@ -543,53 +556,7 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         }, backgroundHandler)
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        try {
-            captureSession?.stopRepeating()
-            captureSession?.close()
-            captureSession = null
-        } catch (e: Exception) {
-            Log.e("CameraDebug", "Error stopping capture session", e)
-        }
-        try {
-            cameraDevice?.close()
-            cameraDevice = null
-        } catch (e: Exception) {
-            Log.e("CameraDebug", "Error closing camera device", e)
-        }
-        try {
-            imageReader.setOnImageAvailableListener(null, null)
-            imageReader.close()
-        } catch (e: Exception) {
-            Log.e("CameraDebug", "Error closing image reader", e)
-        }
-        try {
-            scope.cancel()
-            isModelClosed = true
-            model.close()
-        } catch (e: Exception) {
-            Log.e("Model", "Error closing model", e)
-        }
-        try {
-            backgroundThread.quitSafely()
-        } catch (e: Exception) {
-            Log.e("CameraDebug", "Error quitting background thread", e)
-        }
-        timeUpdateHandler.removeCallbacks(timeUpdateRunnable)
-    }
-    // Helper function to update volume icon based on current audio state
-    private fun updateVolumeIcon() {
-        val isMuted = audioManager.isStreamMute(AudioManager.STREAM_MUSIC) ||
-                audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) == 0
-        ic_volume.setImageResource(if (isMuted) R.drawable.ic_mute else R.drawable.ic_volume)
-    }
 
-    // Helper function to reset gesture tracking
-    private fun resetGestureTracking() {
-        gestureSequenceCount = 0
-        lastDetectedGesture = null
-    }
     @SuppressLint("MissingPermission")
     private fun openCamera() {
         val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
@@ -707,13 +674,101 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         }
     }
 
-//    private fun handleNoCameraAvailable(reason: String) {
-//        runOnUiThread {
-//            Toast.makeText(this, "Cannot enable gesture recognition: $reason", Toast.LENGTH_LONG).show()
-//        }
-//        isGestureRecognitionEnabled = false
-//        cleanupCameraResources()
-//    }
+    fun toggleGesture() {
+        isGestureEnable = !isGestureEnable
+        Log.d(TAG, "Toggling gesture detection: isGestureEnable=$isGestureEnable")
+
+        if (isGestureEnable) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                setupCamera()
+                Log.d(TAG, "Gesture detection enabled")
+            } else {
+                isGestureEnable = false // Revert if permission is not granted
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.CAMERA),
+                    CAMERA_PERMISSION_CODE
+                )
+                Toast.makeText(this, "Camera permission required for gesture detection", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            stopGestureDetection()
+            Log.d(TAG, "Gesture detection disabled")
+        }
+
+        // Update SettingsFragment UI
+        supportFragmentManager.fragments.forEach {
+            if (it is SettingsFragment) {
+                it.updateGestureImage()
+            }
+        }
+    }
+
+    private fun setupCamera() {
+        try {
+            startBackgroundThread()
+            setupImageReader()
+            openCamera()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to set up camera: ${e.message}", e)
+            isGestureEnable = false
+            stopGestureDetection()
+            Toast.makeText(this, "Failed to enable gesture detection", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun stopGestureDetection() {
+        try {
+            captureSession?.stopRepeating()
+            captureSession?.close()
+            captureSession = null
+        } catch (e: Exception) {
+            Log.e(TAG, "Error stopping capture session: ${e.message}", e)
+        }
+        try {
+            cameraDevice?.close()
+            cameraDevice = null
+        } catch (e: Exception) {
+            Log.e(TAG, "Error closing camera device: ${e.message}", e)
+        }
+        try {
+            imageReader.setOnImageAvailableListener(null, null)
+            imageReader.close()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error closing image reader: ${e.message}", e)
+        }
+        try {
+            backgroundThread.quitSafely()
+            backgroundHandler.removeCallbacksAndMessages(null)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error quitting background thread: ${e.message}", e)
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        stopGestureDetection()
+        try {
+            scope.cancel()
+            isModelClosed = true
+            model.close()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error closing model: ${e.message}", e)
+        }
+        timeUpdateHandler.removeCallbacks(timeUpdateRunnable)
+    }
+    // Helper function to update volume icon based on current audio state
+    private fun updateVolumeIcon() {
+        val isMuted = audioManager.isStreamMute(AudioManager.STREAM_MUSIC) ||
+                audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) == 0
+        ic_volume.setImageResource(if (isMuted) R.drawable.ic_mute else R.drawable.ic_volume)
+    }
+
+    // Helper function to reset gesture tracking
+    private fun resetGestureTracking() {
+        gestureSequenceCount = 0
+        lastDetectedGesture = null
+    }
 
     private fun showHomeFragments() {
         supportFragmentManager.beginTransaction()
@@ -749,18 +804,23 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     }
 
     private fun showSettingsFragment() {
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.settingsFragmentContainer, SettingsFragment())
-            .commit()
-        currentScreen = Screen.SETTINGS
+        try {
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.settingsFragmentContainer, SettingsFragment())
+                .commitNow() // Use commitNow to ensure synchronous commit
+            currentScreen = Screen.SETTINGS
 
-        findViewById<FrameLayout>(R.id.navigation_container)?.visibility = View.GONE
-        findViewById<FrameLayout>(R.id.dashboard_container)?.visibility = View.GONE
-        findViewById<FrameLayout>(R.id.batteryContainer)?.visibility = View.GONE
-        findViewById<FrameLayout>(R.id.mainFragmentContainer)?.visibility = View.GONE
-        findViewById<FrameLayout>(R.id.rightFragmentContainer)?.visibility = View.GONE
-
-        findViewById<FrameLayout>(R.id.settingsFragmentContainer)?.visibility = View.VISIBLE
+            // Update visibility of containers
+            findViewById<FrameLayout>(R.id.navigation_container)?.visibility = View.GONE
+            findViewById<FrameLayout>(R.id.dashboard_container)?.visibility = View.GONE
+            findViewById<FrameLayout>(R.id.batteryContainer)?.visibility = View.GONE
+            findViewById<FrameLayout>(R.id.mainFragmentContainer)?.visibility = View.GONE
+            findViewById<FrameLayout>(R.id.rightFragmentContainer)?.visibility = View.GONE
+            findViewById<FrameLayout>(R.id.settingsFragmentContainer)?.visibility = View.VISIBLE
+        } catch (e: IllegalStateException) {
+            Log.e("MainActivity", "Fragment transaction failed: ${e.message}", e)
+            Toast.makeText(this, "Failed to load settings screen", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun updateIconStates() {
@@ -781,8 +841,23 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == CAMERA_PERMISSION_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            setupCamera()
+        if (requestCode == CAMERA_PERMISSION_CODE && grantResults.isNotEmpty()) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "Camera permission granted")
+                if (isGestureEnable) {
+                    setupCamera()
+                }
+            } else {
+                Log.w(TAG, "Camera permission denied")
+                isGestureEnable = false
+                Toast.makeText(this, "Camera permission denied", Toast.LENGTH_LONG).show()
+                // Update SettingsFragment UI
+                supportFragmentManager.fragments.forEach {
+                    if (it is SettingsFragment) {
+                        it.updateGestureImage()
+                    }
+                }
+            }
         }
     }
 
@@ -804,6 +879,21 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
             val currentTime = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date())
             Log.d("TimeUpdate", "Current time: $currentTime")
             timeTextView.text = currentTime
+
+            // Auto Theme Switching
+            val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+            val isDayTime = hour in 6..17  // 6 AM to 5:59 PM
+
+            val overlayShouldBeEnabled = isDayTime // Day → enable overlay
+
+            val settingsFragment = SettingsFragment()
+            val overlayCurrentlyEnabled = settingsFragment.isOverlayEnabled()
+
+            if (overlayCurrentlyEnabled != overlayShouldBeEnabled) {
+                Log.i("ThemeAutoSwitch", "Switching theme. DayTime=$isDayTime")
+                settingsFragment.setOverlayTheme(overlayShouldBeEnabled)
+            }
+
         } catch (e: Exception) {
             Log.e("TimeUpdate", "Error updating time", e)
         }
@@ -812,15 +902,15 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     private fun setLedState(state: Boolean) {
         val value = if (state) 1 else 0
         try {
-//            synchronized(carPropertyManager) {
-//                carPropertyManager.setProperty(
-//                    Integer::class.java,
-//                    VENDOR_EXTENSION_LIGHT_CONTROL_PROPERTY,
-//                    areaID,
-//                    Integer(value)
-//                )
-//                Log.d("LED", "LED state set to: $value")
-//            }
+            synchronized(carPropertyManager) {
+                carPropertyManager.setProperty(
+                    Integer::class.java,
+                    VENDOR_EXTENSION_LIGHT_CONTROL_PROPERTY,
+                    areaID,
+                    Integer(value)
+                )
+                Log.d("LED", "LED state set to: $value")
+            }
         } catch (e: Exception) {
             Log.e("LED", "Failed to set LED state", e)
         }
@@ -832,42 +922,6 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
     private fun updateLightIcon(state: Boolean) {
         lightIcon.setImageResource(if (state) R.drawable.light_on else R.drawable.light_off)
     }
-
-//    override fun onDestroy() {
-//        super.onDestroy()
-//        // Stop camera capture and clean up resources
-//        try {
-//            captureSession?.stopRepeating()
-//            captureSession?.close()
-//            captureSession = null
-//        } catch (e: Exception) {
-//            Log.e("CameraDebug", "Error stopping capture session", e)
-//        }
-//        try {
-//            cameraDevice?.close()
-//            cameraDevice = null
-//        } catch (e: Exception) {
-//            Log.e("CameraDebug", "Error closing camera device", e)
-//        }
-//        try {
-//            imageReader.setOnImageAvailableListener(null, null) // Detach listener
-//            imageReader.close()
-//        } catch (e: Exception) {
-//            Log.e("CameraDebug", "Error closing image reader", e)
-//        }
-//        try {
-//            scope.cancel()
-//            model.close()
-//        } catch (e: Exception) {
-//            Log.e("Model", "Error closing model", e)
-//        }
-//        try {
-//            backgroundThread.quitSafely()
-//        } catch (e: Exception) {
-//            Log.e("CameraDebug", "Error quitting background thread", e)
-//        }
-//        timeUpdateHandler.removeCallbacks(timeUpdateRunnable)
-//    }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
@@ -883,6 +937,9 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
 
     override fun onResume() {
         super.onResume()
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            bindService()
+        }
         bindService(
             Intent(this, VoskRecognitionService::class.java),
             serviceConnection,
@@ -892,6 +949,11 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
 
     override fun onPause() {
         super.onPause()
+        if (isBoundEye) {
+            eyeDetectionService?.setDetectionCallback(null)
+            unbindService(serviceConnectionEye)
+            isBoundEye = false
+        }
         if (isBound) {
             unbindService(serviceConnection)
             isBound = false
@@ -913,14 +975,6 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
                 updateLightIcon(false)
                 setLedState(false)
                 playAudio(R.raw.lightoff)
-            }
-            "light_mode" -> {
-                // change to light mode
-                playAudio(R.raw.day)
-            }
-            "night_mode" -> {
-                // change to dark mode
-                playAudio(R.raw.night)
             }
             "seat_front" -> {
                 // adjust seat position 3
@@ -979,10 +1033,11 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         supportFragmentManager.fragments.forEach {
             if (it is SettingsFragment) it.updateVoiceImage()
         }
-
     }
 
     private fun startServiceOnlyOnce() {
+        Log.d(TAG, "Starting service -- Vosk and Drawsiness")
+        startService(Intent(this, EyeDetectionService::class.java))
         startService(Intent(this, VoskRecognitionService::class.java))
         isServiceRunning = true
     }
@@ -1006,4 +1061,54 @@ class MainActivity : AppCompatActivity(), VoskRecognitionService.RecognitionCall
         lastCommand = command
         runOnUiThread { handleCommand(command) }
     }
+
+    override fun onResultReceived(status: String) {
+        if (isDestroyed) return
+        Log.d(TAG, "Result received: $status")
+
+        runOnUiThread {
+            if (isEyeDetectionEnabled) {
+                when (status.lowercase(Locale.ROOT)) {
+                    "open" -> drowsinessStatusIcon.setImageResource(R.drawable.ic_drowsiness)
+                    "closed" -> drowsinessStatusIcon.setImageResource(R.drawable.eye_closed)
+                    else -> drowsinessStatusIcon.setImageResource(R.drawable.eye_enabled)
+                }
+            } else {
+                drowsinessStatusIcon.setImageResource(R.drawable.eye_disabled)
+            }
+        }
+    }
+
+    override fun onErrorReceived(error: String) {
+        Log.e(TAG, "Error received: $error")
+        runOnUiThread {
+            Toast.makeText(this, "Error: $error", Toast.LENGTH_LONG).show()
+
+        }
+    }
+
+    override fun onStatusReceived(isEnabled: Boolean) {
+        if (isDestroyed) return
+        Log.d(TAG, "Status received: isEnabled=$isEnabled")
+        isEyeDetectionEnabled = isEnabled
+
+        // Make sure the activity is still alive
+        if (!isFinishing && !isDestroyed) {
+            runOnUiThread {
+                // Safely try to find the icon and update it
+                val eyeIcon = findViewById<ImageView?>(R.id.drowsinessStatusIcon)
+                eyeIcon?.setImageResource(
+                    if (isEnabled) R.drawable.eye_enabled else R.drawable.eye_disabled
+                )
+            }
+        }
+
+        // Also update the icon in SettingsFragment if it's currently shown
+        val settingsFragment = supportFragmentManager.findFragmentById(R.id.settingsFragmentContainer)
+        if (settingsFragment is SettingsFragment) {
+            settingsFragment.updateDrowsinessIcon(isEnabled)
+        }
+    }
+
+
 }

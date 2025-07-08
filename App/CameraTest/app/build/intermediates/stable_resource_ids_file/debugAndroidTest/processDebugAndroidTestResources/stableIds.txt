@@ -1,0 +1,2 @@
+android.vendor.cameratest.test:style/WhiteBackgroundTheme = 0x7f010001
+android.vendor.cameratest.test:style/WhiteBackgroundDialogTheme = 0x7f010000
