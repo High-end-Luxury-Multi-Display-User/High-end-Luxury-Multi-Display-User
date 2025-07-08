@@ -4,7 +4,7 @@
     android:id="@+id/battery_fragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/black_background">
+    android:background="@drawable/bg_whole_background">
 
     <LinearLayout
         android:id="@+id/battery_root"
@@ -39,7 +39,7 @@
                 android:text="75%"
                 android:textSize="26sp"
                 android:textStyle="bold"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/time"
                 android:layout_centerInParent="true" />
 
             <ImageView

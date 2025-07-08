@@ -15,14 +15,14 @@ import com.example.driverlauncher.R
 
 class CarVitalsFragment : Fragment() {
 
-//    private val VENDOR_EXTENSION_FLeft_Door_PROPERTY = 0x21400107
-//    private val VENDOR_EXTENSION_RLeft_Door_PROPERTY = 0x21400108
-//    private val VENDOR_EXTENSION_FRight_Door_PROPERTY = 0x21400109
-//    private val VENDOR_EXTENSION_RRight_Door_PROPERTY = 0x2140010A
-//    private val areaID = 0
-//
-//    private lateinit var car: Car
-//    private lateinit var carPropertyManager: CarPropertyManager
+    private val VENDOR_EXTENSION_FLeft_Door_PROPERTY = 0x21400107
+    private val VENDOR_EXTENSION_RLeft_Door_PROPERTY = 0x21400108
+    private val VENDOR_EXTENSION_FRight_Door_PROPERTY = 0x21400109
+    private val VENDOR_EXTENSION_RRight_Door_PROPERTY = 0x2140010A
+    private val areaID = 0
+
+    private lateinit var car: Car
+    private lateinit var carPropertyManager: CarPropertyManager
 
     private lateinit var openDoorFL: ImageView
     private lateinit var openDoorFR: ImageView
@@ -39,16 +39,16 @@ class CarVitalsFragment : Fragment() {
 
     private val updateTask = object : Runnable {
         override fun run() {
-//            try {
-//                updateDoorVisibility(openDoorFL,closedDoorFL, VENDOR_EXTENSION_FLeft_Door_PROPERTY, "FL")
-//                updateDoorVisibility(openDoorFR,closedDoorFR, VENDOR_EXTENSION_FRight_Door_PROPERTY, "FR")
-//                updateDoorVisibility(openDoorRL,closedDoorRL, VENDOR_EXTENSION_RLeft_Door_PROPERTY, "RL")
-//                updateDoorVisibility(openDoorRR,closedDoorRR, VENDOR_EXTENSION_RRight_Door_PROPERTY, "RR")
-//            } catch (e: Exception) {
-//                Log.e("CarDoors", "Error reading door states", e)
-//            } finally {
-//                handler.postDelayed(this, updateInterval)
-//            }
+           try {
+            updateDoorVisibility(openDoorFL,closedDoorFL, VENDOR_EXTENSION_FLeft_Door_PROPERTY, "FL")
+            updateDoorVisibility(openDoorFR,closedDoorFR, VENDOR_EXTENSION_FRight_Door_PROPERTY, "FR")
+            updateDoorVisibility(openDoorRL,closedDoorRL, VENDOR_EXTENSION_RLeft_Door_PROPERTY, "RL")
+              updateDoorVisibility(openDoorRR,closedDoorRR, VENDOR_EXTENSION_RRight_Door_PROPERTY, "RR")
+      } catch (e: Exception) {
+                Log.e("CarDoors", "Error reading door states", e)
+            } finally {
+                handler.postDelayed(this, updateInterval)
+            }
         }
     }
 
@@ -72,30 +72,30 @@ class CarVitalsFragment : Fragment() {
         openDoorRL = view.findViewById(R.id.open_door_rl)
         openDoorRR = view.findViewById(R.id.open_door_rr)
 
-//        try {
-//            car = Car.createCar(requireContext().applicationContext)
-//            carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
-//        } catch (e: Exception) {
-//            Log.e("CarDoors", "Car init failed", e)
-//            return
-//        }
+        try {
+            car = Car.createCar(requireContext().applicationContext)
+            carPropertyManager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
+        } catch (e: Exception) {
+            Log.e("CarDoors", "Car init failed", e)
+            return
+        }
 
         handler.post(updateTask) // Start periodic polling
     }
 
     private fun updateDoorVisibility(openDoorImage: ImageView,closedDoorImage: ImageView, propertyId: Int, label: String) {
-//        try {
-//            val carPropValue =
-//                carPropertyManager.getProperty(Integer::class.java, propertyId, areaID)
-//            if (carPropValue != null) {
-//                val isOpen = carPropValue.value.toInt() == 1
-//                openDoorImage.visibility = if (isOpen) View.VISIBLE else View.GONE  // set the open door visible
-//                closedDoorImage.visibility = if (isOpen) View.GONE else View.VISIBLE  // set the closed door visible
-//                Log.d("CarDoors", "Door $label state: ${carPropValue.value}")
-//            }
-//        } catch (e: Exception) {
-//            Log.e("CarDoors", "Failed to read property $propertyId", e)
-//        }
+     try {
+            val carPropValue =
+             carPropertyManager.getProperty(Integer::class.java, propertyId, areaID)
+            if (carPropValue != null) {
+                val isOpen = carPropValue.value.toInt() == 1
+                openDoorImage.visibility = if (isOpen) View.VISIBLE else View.GONE  // set the open door visible
+                closedDoorImage.visibility = if (isOpen) View.GONE else View.VISIBLE  // set the closed door visible
+                Log.d("CarDoors", "Door $label state: ${carPropValue.value}")
+            }
+        } catch (e: Exception) {
+            Log.e("CarDoors", "Failed to read property $propertyId", e)
+        }
     }
 
 
